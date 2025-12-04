@@ -1,11 +1,28 @@
+# Prometheus Configuration for Music Place Load Testing
+
 global:
-  scrape_interval: 15s # 15초마다 메트릭 수집
-  evaluation_interval: 15s # alert rule 평가 간격
+  scrape_interval: 10s       # 부하 테스트 시 자주 수집
+  evaluation_interval: 10s
+  external_labels:
+    monitor: 'music-place-loadtest'
+    environment: 'docker'
 
 scrape_configs:
-  - job_name: 'musicplace-backend'
-    metrics_path: '/actuator/prometheus' # 스프링 부트 지표 경로
+  # Prometheus 자체 모니터링
+  - job_name: 'prometheus'
     static_configs:
-      - targets: ['host.docker.internal:8081'] # Spring Boot 애플리케이션 주소
+      - targets: ['localhost:9090']
         labels:
-          instance: 'spring-app'
+          application: 'prometheus'
+
+  # Music Place Application
+  - job_name: 'music-place'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['app:8081']
+        labels:
+          application: 'music-place'
+          instance: 'music-place-app'
+          environment: 'loadtest'

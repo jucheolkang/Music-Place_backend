@@ -1,8 +1,15 @@
+# monitoring/grafana/provisioning/dashboards/dashboard.yml
+
 apiVersion: 1
 
 providers:
-  - name: 'Spring Boot Monitoring'
-    folder: 'Spring Boot'
+  - name: 'Music Place Dashboards'
+    orgId: 1
+    folder: 'Music Place'
     type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

@@ -1,12 +1,21 @@
 version: '3.9'
 
+networks:
+  musicplace-network:
+    driver: bridge
+
 services:
+  # ===================================
+  # MySQL Database
+  # ===================================
   mysql:
     image: mysql:8.0
     container_name: musicplace_mysql
     restart: always
+    networks:
+      - musicplace-network
     ports:
-      - "13306:3306"  # 로컬에서 MySQL Workbench 등으로 접근 가능
+      - "13306:3306"
     volumes:
       - ./db/mysql/data:/var/lib/mysql
       - ./db/mysql/init:/docker-entrypoint-initdb.d
@@ -16,44 +25,156 @@ services:
       MYSQL_CHARSET: ${DOCKER_MYSQL_CHARSET}
       MYSQL_COLLATION: ${DOCKER_MYSQL_COLLATION}
       TZ: ${DOCKER_TZ}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DOCKER_MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ===================================
+  # Redis Cache
+  # ===================================
   redis:
     image: redis:7.0
     container_name: musicplace_redis
     restart: always
+    networks:
+      - musicplace-network
     ports:
-      - "16379:6379"  # 로컬에서 redis-cli 등으로 접근 가능
+      - "16379:6379"
     volumes:
       - ./db/redis/data:/data
     command: ["redis-server", "--requirepass", "${DOCKER_REDIS_PASSWORD}"]
     environment:
       TZ: ${DOCKER_TZ}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${DOCKER_REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ===================================
+  # Spring Boot Application
+  # ===================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: musicplace_app
+    restart: always
+    networks:
+      - musicplace-network
+    ports:
+      - "8080:8080"  # Application port
+      - "8081:8081"  # Management/Actuator port
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: loadtest
+      MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_PASSWORD}
+      REDIS_PASSWORD: ${DOCKER_REDIS_PASSWORD}
+      JAVA_OPTS: "-Xms512m -Xmx1g -XX:+UseG1GC"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TIME: ${JWT_ACCESS_TIME}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ===================================
+  # Prometheus (Metrics Collection)
+  # ===================================
   prometheus:
     image: prom/prometheus:latest
     container_name: musicplace_prometheus
     restart: always
+    networks:
+      - musicplace-network
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+    depends_on:
+      - app
 
+  # ===================================
+  # Grafana (Visualization)
+  # ===================================
   grafana:
     image: grafana/grafana:latest
     container_name: musicplace_grafana
     restart: always
+    networks:
+      - musicplace-network
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
     depends_on:
       - prometheus
 
+  # ===================================
+  # InfluxDB (k6 Results Storage)
+  # ===================================
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: musicplace_influxdb
+    restart: always
+    networks:
+      - musicplace-network
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123456
+      - DOCKER_INFLUXDB_INIT_ORG=musicplace
+      - DOCKER_INFLUXDB_INIT_BUCKET=k6
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+
+  # ===================================
+  # k6 (Load Testing) - 수동 실행용
+  # ===================================
+  k6:
+    image: grafana/k6:latest
+    container_name: musicplace_k6
+    networks:
+      - musicplace-network
+    volumes:
+      - ./load-test:/scripts
+      - ./load-test/results:/results
+    environment:
+      - K6_OUT=influxdb=http://influxdb:8086
+      - K6_INFLUXDB_ORGANIZATION=musicplace
+      - K6_INFLUXDB_BUCKET=k6
+      - K6_INFLUXDB_TOKEN=my-super-secret-auth-token
+    depends_on:
+      - app
+      - influxdb
+    # 기본적으로 실행하지 않음 (프로파일로 제어)
+    profiles:
+      - test
+
 volumes:
-  grafana_data:
+  grafana-data:
+  prometheus-data:
+  influxdb-data:
