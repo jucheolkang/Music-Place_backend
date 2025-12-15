@@ -1,19 +1,15 @@
-package org.musicplace.member.domain;
+package org.musicplace.user.domain;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Comment;
-import org.musicplace.follow.domain.FollowEntity;
-import org.musicplace.playList.domain.PLEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -21,7 +17,8 @@ import java.util.List;
 @Getter
 @Table(name = "USERS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SignInEntity implements UserDetails {
+public class UserEntity implements UserDetails {
+
     @Id
     @Column(name = "member_id", nullable = false, length = 64)
     @Comment("아이디")
@@ -39,9 +36,9 @@ public class SignInEntity implements UserDetails {
     @Comment("성별")
     private Gender gender;
 
-    @Column(name = "profile_img_url", nullable = true)
+    @Column(name = "profile_img_url")
     @Comment("프로필 이미지")
-    private String profile_img_url;
+    private String profileImgUrl;
 
     @Column(name = "email", nullable = false, length = 100)
     @Comment("이메일")
@@ -53,23 +50,22 @@ public class SignInEntity implements UserDetails {
 
     @Column(name = "delete_account", nullable = false)
     @Comment("탈퇴여부")
-    private Boolean delete_account = false;
+    private Boolean deleteAccount = false;
 
     @Column(name = "roles", nullable = false)
     @Comment("권한")
     private String role;
 
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "signInEntity", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<FollowEntity> followEntities = new ArrayList<>();
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "signInEntity", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<PLEntity> playlistEntities = new ArrayList<>();
-
     @Builder
-    public SignInEntity(String memberId, String pw, Gender gender, String email, String nickname, String name, String role) {
+    public UserEntity(
+            String memberId,
+            String pw,
+            Gender gender,
+            String email,
+            String nickname,
+            String name,
+            String role
+    ) {
         this.memberId = memberId;
         this.pw = pw;
         this.gender = gender;
@@ -77,28 +73,22 @@ public class SignInEntity implements UserDetails {
         this.nickname = nickname;
         this.name = name;
         this.role = role;
-
-
     }
 
-    public void SignInUpdate(String name, String email, String nickname, String profile_img_url) {
-        this.profile_img_url = profile_img_url;
+    public void updateProfile(String name, String email, String nickname, String profileImgUrl) {
+        this.name = name;
         this.email = email;
         this.nickname = nickname;
-        this.name = name;
+        this.profileImgUrl = profileImgUrl;
     }
 
-    public void SignInDelete() {
-        this.delete_account = true;
+    public void deleteAccount() {
+        this.deleteAccount = true;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        List<GrantedAuthority> roles = new ArrayList<>();
-        roles.add(new SimpleGrantedAuthority(role));
-
-        return roles;
+        return List.of(new SimpleGrantedAuthority(role));
     }
 
     @Override
@@ -108,26 +98,11 @@ public class SignInEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return name;
+        return memberId;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
+    @Override public boolean isAccountNonExpired() { return true; }
+    @Override public boolean isAccountNonLocked() { return true; }
+    @Override public boolean isCredentialsNonExpired() { return true; }
+    @Override public boolean isEnabled() { return !deleteAccount; }
 }

@@ -1,11 +1,10 @@
-package org.musicplace.member.dto;
+package org.musicplace.user.dto;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.musicplace.member.domain.Gender;
-import sun.misc.SignalHandler;
+import org.musicplace.user.domain.Gender;
 
 
 @Getter

@@ -1,8 +1,8 @@
 package org.musicplace.global.security.service;
 
 import lombok.RequiredArgsConstructor;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.member.repository.SignInRepository;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.repository.SignInRepository;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -15,11 +15,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
 
     @Override
-    public SignInEntity loadUserByUsername(String memberId) throws UsernameNotFoundException {
-        SignInEntity signInEntity = signInRepository.findByMemberId(memberId);
-        if (signInEntity == null) {
+    public UserEntity loadUserByUsername(String memberId) throws UsernameNotFoundException {
+        UserEntity userEntity = signInRepository.findByMemberId(memberId);
+        if (userEntity == null) {
             throw new UsernameNotFoundException("User not found with member_id: " + memberId);
         }
-        return signInEntity;
+        return userEntity;
     }
 }

@@ -1,14 +1,14 @@
-package org.musicplace.member.service;
+package org.musicplace.user.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.musicplace.member.domain.Gender;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.member.dto.SignInSaveDto;
-import org.musicplace.member.dto.SignInUpdateDto;
-import org.musicplace.member.repository.SignInRepository;
+import org.musicplace.user.domain.Gender;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.dto.SignInSaveDto;
+import org.musicplace.user.dto.SignInUpdateDto;
+import org.musicplace.user.repository.SignInRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -52,15 +52,15 @@ class SignInServiceTest {
                 .build());
 
         //when
-        SignInEntity signInEntity = signInRepository.findById(member_id).get();
+        UserEntity userEntity = signInRepository.findById(member_id).get();
 
         //then
-        assertEquals(pw, signInEntity.getPw());
-        assertEquals(email, signInEntity.getEmail());
-        assertEquals(member_id, signInEntity.getMember_id());
-        assertEquals(name, signInEntity.getName());
-        assertEquals(nickname, signInEntity.getNickname());
-        assertEquals(gender, signInEntity.getGender());
+        assertEquals(pw, userEntity.getPw());
+        assertEquals(email, userEntity.getEmail());
+        assertEquals(member_id, userEntity.getMember_id());
+        assertEquals(name, userEntity.getName());
+        assertEquals(nickname, userEntity.getNickname());
+        assertEquals(gender, userEntity.getGender());
     }
 
     @Test
@@ -95,13 +95,13 @@ class SignInServiceTest {
                 .nickname(nickname2)
                 .email(email2)
                 .build());
-        SignInEntity signInEntity = signInRepository.findById(member_id).get();
+        UserEntity userEntity = signInRepository.findById(member_id).get();
 
         //then
-        assertEquals(pw2, signInEntity.getPw());
-        assertEquals(email2, signInEntity.getEmail());
-        assertEquals(name2, signInEntity.getName());
-        assertEquals(nickname2, signInEntity.getNickname());
+        assertEquals(pw2, userEntity.getPw());
+        assertEquals(email2, userEntity.getEmail());
+        assertEquals(name2, userEntity.getName());
+        assertEquals(nickname2, userEntity.getNickname());
     }
 
     @Test
@@ -127,7 +127,7 @@ class SignInServiceTest {
 
         //when
         signInService.SignInDelete();
-        Optional<SignInEntity> signInEntity = signInRepository.findById(member_id);
+        Optional<UserEntity> signInEntity = signInRepository.findById(member_id);
 
         //then
         assertTrue(signInEntity.isPresent());

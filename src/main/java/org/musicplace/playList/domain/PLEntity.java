@@ -6,11 +6,9 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.Comment;
 import org.musicplace.global.jpa.AuditInformation;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.playList.dto.MusicSaveDto;
+import org.musicplace.user.domain.UserEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +59,7 @@ public class PLEntity extends AuditInformation {
     @JsonManagedReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private SignInEntity signInEntity;
+    private UserEntity userEntity;
 
 
     @Builder
@@ -84,5 +82,5 @@ public class PLEntity extends AuditInformation {
         PLDelete = true;
     }
 
-    public void SignInEntity(SignInEntity signInEntity) {this.signInEntity = signInEntity; }
+    public void SignInEntity(UserEntity userEntity) {this.userEntity = userEntity; }
 }

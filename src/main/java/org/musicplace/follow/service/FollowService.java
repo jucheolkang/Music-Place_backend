@@ -9,8 +9,8 @@ import org.musicplace.follow.repository.FollowRepository;
 import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.global.exception.ExceptionHandler;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.member.service.SignInService;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.service.SignInService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,16 +26,16 @@ public class FollowService {
     @Transactional
     public Long FollowSave(FollowSaveDto followSaveDto) {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        signInService.CheckSignInDelete(signInEntity);
-        FollowCheck(followSaveDto.getTarget_id(), signInEntity);
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        signInService.CheckSignInDelete(userEntity);
+        FollowCheck(followSaveDto.getTarget_id(), userEntity);
         FollowEntity followEntity = FollowEntity.builder()
                 .target_id(followSaveDto.getTarget_id())
                 .nickname(followSaveDto.getNickname())
                 .profile_img_url(followSaveDto.getProfile_img_url())
                 .build();
-        signInEntity.getFollowEntities().add(followEntity);
-        followEntity.SignInEntity(signInEntity);
+        userEntity.getFollowEntities().add(followEntity);
+        followEntity.SignInEntity(userEntity);
         followRepository.save(followEntity);
         return followEntity.getFollow_id();
     }
@@ -43,10 +43,10 @@ public class FollowService {
     @Transactional
     public void followDelete(Long follow_id) {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
+        UserEntity userEntity = signInService.SignInFindById(member_id);
         FollowEntity followEntity = followFindById(follow_id);
-        if (signInEntity.getFollowEntities().contains(followEntity)) {
-            signInEntity.getFollowEntities().remove(followEntity);
+        if (userEntity.getFollowEntities().contains(followEntity)) {
+            userEntity.getFollowEntities().remove(followEntity);
             followRepository.delete(followEntity);
         } else {
             throw new ExceptionHandler(ErrorCode.FOLLOW_NO_ID);
@@ -55,8 +55,8 @@ public class FollowService {
 
     public List<FollowResponseDto> followFindAll() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        List<FollowEntity> followEntities = signInEntity.getFollowEntities();
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        List<FollowEntity> followEntities = userEntity.getFollowEntities();
         List<FollowResponseDto> followResponseDtos = followEntities.stream()
                 .map(followEntity -> FollowResponseDto.builder()
                         .follow_id(followEntity.getFollow_id())
@@ -70,13 +70,13 @@ public class FollowService {
 
     public Long followCount() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        return signInEntity.getFollowEntities().stream().count();
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        return userEntity.getFollowEntities().stream().count();
     }
 
     public Long otherFollowCount(String otherMemberId) {
-        SignInEntity signInEntity = signInService.SignInFindById(otherMemberId);
-        return signInEntity.getFollowEntities().stream().count();
+        UserEntity userEntity = signInService.SignInFindById(otherMemberId);
+        return userEntity.getFollowEntities().stream().count();
     }
 
     public FollowEntity followFindById(Long target_id) {
@@ -85,8 +85,8 @@ public class FollowService {
         return followEntity;
     }
 
-    public void FollowCheck(String targetId, SignInEntity signInEntity) {
-        List<FollowEntity> followEntities = signInEntity.getFollowEntities();
+    public void FollowCheck(String targetId, UserEntity userEntity) {
+        List<FollowEntity> followEntities = userEntity.getFollowEntities();
 
         for (FollowEntity target : followEntities) {
             if (target.getTarget_id().equals(targetId)) {
@@ -94,7 +94,7 @@ public class FollowService {
             }
         }
 
-        if (signInEntity.getMemberId().equals(targetId)) {
+        if (userEntity.getMemberId().equals(targetId)) {
             throw new ExceptionHandler(ErrorCode.NOT_FOLLOW_SELF);
         }
     }

@@ -2,8 +2,8 @@ package org.musicplace.chat.interceptor;
 
 import lombok.RequiredArgsConstructor;
 import org.musicplace.chat.security.JwtTokenProvider;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.member.service.SignInService;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.service.SignInService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
@@ -33,7 +33,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                 String userId = jwtTokenProvider.getUsernameFromToken(token);
 
                 // SignInEntity에서 nickname을 가져와 세션에 저장
-                SignInEntity user = signInService.SignInFindById(userId);  // 사용자 ID로 사용자 엔티티 검색
+                UserEntity user = signInService.SignInFindById(userId);  // 사용자 ID로 사용자 엔티티 검색
                 attributes.put("username", user.getNickname());  // nickname 저장
                 return true;
             }

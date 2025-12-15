@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.global.exception.ExceptionHandler;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.member.service.SignInService;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.service.SignInService;
 import org.musicplace.playList.domain.OnOff;
 import org.musicplace.playList.domain.PLEntity;
 import org.musicplace.playList.dto.PLSaveDto;
@@ -28,17 +28,17 @@ public class PLService {
     @Transactional
     public Long PLsave(PLSaveDto plSaveDto) {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        signInService.CheckSignInDelete(signInEntity);
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        signInService.CheckSignInDelete(userEntity);
         PLEntity plEntity = plRepository.save(PLEntity.builder()
                 .title(plSaveDto.getTitle())
                 .onOff(plSaveDto.getOnOff())
                 .comment(plSaveDto.getComment())
                 .cover_img(plSaveDto.getCover_img())
-                .nickname(signInEntity.getNickname())
+                .nickname(userEntity.getNickname())
                 .build());
-        signInEntity.getPlaylistEntities().add(plEntity);
-        plEntity.SignInEntity(signInEntity);
+        userEntity.getPlaylistEntities().add(plEntity);
+        plEntity.SignInEntity(userEntity);
         plRepository.save(plEntity);
         return plEntity.getPlaylist_id();
     }
@@ -63,21 +63,21 @@ public class PLService {
 
     public Long PLCount() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        return signInEntity.getPlaylistEntities().stream().count();
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        return userEntity.getPlaylistEntities().stream().count();
     }
 
     public Long otherPLCount(String otherMemberId) {
-        SignInEntity signInEntity = signInService.SignInFindById(otherMemberId);
-        return signInEntity.getPlaylistEntities().stream()
+        UserEntity userEntity = signInService.SignInFindById(otherMemberId);
+        return userEntity.getPlaylistEntities().stream()
                 .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public))
                 .count();
     }
 
     public List<ResponsePLDto> PLFindAll() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        SignInEntity signInEntity = signInService.SignInFindById(member_id);
-        List<ResponsePLDto> nonDeletedPlayLists = signInEntity.getPlaylistEntities()
+        UserEntity userEntity = signInService.SignInFindById(member_id);
+        List<ResponsePLDto> nonDeletedPlayLists = userEntity.getPlaylistEntities()
                 .stream()
                 .filter(plEntity -> !plEntity.isPLDelete())
                 .map(plEntity -> ResponsePLDto.builder()
@@ -93,8 +93,8 @@ public class PLService {
     }
 
     public List<ResponsePLDto> getOtherUserPL(String memberId) {
-        SignInEntity signInEntity = signInService.SignInFindById(memberId);
-        List<ResponsePLDto> publicPlaylist = signInEntity.getPlaylistEntities()
+        UserEntity userEntity = signInService.SignInFindById(memberId);
+        List<ResponsePLDto> publicPlaylist = userEntity.getPlaylistEntities()
                 .stream()
                 .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public))
                 .map(plEntity -> ResponsePLDto.builder()
@@ -116,7 +116,7 @@ public class PLService {
                 .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public) && !plEntity.isPLDelete())
                 .map(plEntity -> ResponsePLDto.builder()
                         .playlist_id(plEntity.getPlaylist_id())
-                        .member_id(plEntity.getSignInEntity().getMemberId())
+                        .member_id(plEntity.getUserEntity().getMemberId())
                         .PLTitle(plEntity.getPLTitle())
                         .nickname(plEntity.getNickname())
                         .cover_img(plEntity.getCover_img())

@@ -1,6 +1,6 @@
 package org.musicplace.global.security.config;
 
-import org.musicplace.member.domain.SignInEntity;
+import org.musicplace.user.domain.UserEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,29 +9,29 @@ import java.util.Collection;
 import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
-    private final SignInEntity signInEntity;
+    private final UserEntity userEntity;
 
-    public CustomUserDetails(SignInEntity signInEntity) {
-        this.signInEntity = signInEntity;
+    public CustomUserDetails(UserEntity userEntity) {
+        this.userEntity = userEntity;
     }
 
-    public SignInEntity getSignInEntity() {
-        return signInEntity;
+    public UserEntity getSignInEntity() {
+        return userEntity;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(signInEntity.getRole()));
+        return List.of(new SimpleGrantedAuthority(userEntity.getRole()));
     }
 
     @Override
     public String getPassword() {
-        return signInEntity.getPw();
+        return userEntity.getPw();
     }
 
     @Override
     public String getUsername() {
-        return signInEntity.getMemberId();
+        return userEntity.getMemberId();
     }
 
     @Override
@@ -51,6 +51,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return !signInEntity.getDelete_account();
+        return !userEntity.getDelete_account();
     }
 }

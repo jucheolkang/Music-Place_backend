@@ -1,7 +1,7 @@
 package org.musicplace.global.security.authorizaion;
 
 import org.musicplace.global.security.config.CustomUserDetails;
-import org.musicplace.member.domain.SignInEntity;
+import org.musicplace.user.domain.UserEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -20,8 +20,8 @@ public class MemberAuthorizationUtil {
         Object principal = authentication.getPrincipal();
         if (principal instanceof CustomUserDetails) {
             return ((CustomUserDetails) principal).getSignInEntity().getMemberId();
-        } else if (principal instanceof SignInEntity) {
-            return ((SignInEntity) principal).getMemberId();
+        } else if (principal instanceof UserEntity) {
+            return ((UserEntity) principal).getMemberId();
         }
 
         throw new ClassCastException("Unexpected Principal type: " + principal.getClass().getName());

@@ -1,4 +1,4 @@
-package org.musicplace.member.domain;
+package org.musicplace.user.domain;
 
 public enum Gender {
     male,

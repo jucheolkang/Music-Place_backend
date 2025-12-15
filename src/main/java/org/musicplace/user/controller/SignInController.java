@@ -1,10 +1,10 @@
-package org.musicplace.member.controller;
+package org.musicplace.user.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.musicplace.member.dto.SignInGetUserDataDto;
-import org.musicplace.member.dto.SignInSaveDto;
-import org.musicplace.member.dto.SignInUpdateDto;
-import org.musicplace.member.service.SignInService;
+import org.musicplace.user.dto.SignInGetUserDataDto;
+import org.musicplace.user.dto.SignInSaveDto;
+import org.musicplace.user.dto.SignInUpdateDto;
+import org.musicplace.user.service.SignInService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

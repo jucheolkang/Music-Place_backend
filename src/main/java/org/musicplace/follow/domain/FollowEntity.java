@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Comment;
-import org.musicplace.member.domain.SignInEntity;
+import org.musicplace.user.domain.UserEntity;
 
 @Entity
 @Getter
@@ -34,7 +34,7 @@ public class FollowEntity {
     @JsonManagedReference
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private SignInEntity signInEntity;
+    private UserEntity userEntity;
 
     @Builder
     public FollowEntity(String target_id, String nickname, String profile_img_url) {
@@ -43,5 +43,5 @@ public class FollowEntity {
         this.profile_img_url = profile_img_url;
     }
 
-    public void SignInEntity(SignInEntity signInEntity) {this.signInEntity = signInEntity; }
+    public void SignInEntity(UserEntity userEntity) {this.userEntity = userEntity; }
 }
