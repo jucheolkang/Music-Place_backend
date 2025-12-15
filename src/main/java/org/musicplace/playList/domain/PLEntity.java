@@ -15,72 +15,50 @@ import java.util.List;
 
 
 @Entity
-@Getter
 @Table(name = "PLAYLIST")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PLEntity extends AuditInformation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "PLAYLIST_ID", nullable = false)
-    private Long playlist_id;
+    @Column(name = "PLAYLIST_ID")
+    private Long playlistId;
+
+    @Column(name = "member_id", nullable = false)
+    private String memberId; // 🔥 FK 직접 참조
 
     @Column(name = "TITLE", nullable = false)
-    @Comment("플리 제목")
-    private String PLTitle;
+    private String title;
 
-    @Column(name = "nickname", nullable = false, length = 50)
-    @Comment("닉네임")
+    @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "COVER_IMG", nullable = true)
-    @Comment("커버 이미지")
-    private String cover_img;
+    @Column(name = "COVER_IMG")
+    private String coverImg;
 
     @Column(name = "ONOFF", nullable = false)
-    @Comment("공개여부")
+    @Enumerated(EnumType.STRING)
     private OnOff onOff;
 
-    @Column(name = "COMMENT", nullable = true)
-    @Comment("플리 설명")
+    @Column(name = "COMMENT")
     private String comment;
 
     @Column(name = "DELETE_STATE", nullable = false)
-    @Comment("삭제여부")
-    private boolean PLDelete = false;
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "plEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<MusicEntity> musicEntities = new ArrayList<>();
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "plEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CommentEntity> commentEntities = new ArrayList<>();
-
-    @JsonManagedReference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private UserEntity userEntity;
-
+    private boolean deleteState = false;
 
     @Builder
-    public PLEntity(String title, String nickname, OnOff onOff, String cover_img, String comment) {
-        this.PLTitle = title;
+    public PLEntity(String memberId, String title, String nickname,
+                    OnOff onOff, String coverImg, String comment) {
+        this.memberId = memberId;
+        this.title = title;
         this.nickname = nickname;
         this.onOff = onOff;
+        this.coverImg = coverImg;
         this.comment = comment;
-        this.cover_img = cover_img;
     }
 
-    public void PLUpdate(String title, OnOff onOff, String cover_img, String comment) {
-        this.PLTitle = title;
-        this.onOff = onOff;
-        this.comment = comment;
-        this.cover_img = cover_img;
+    public void delete() {
+        this.deleteState = true;
     }
-
-    public void delete () {
-        PLDelete = true;
-    }
-
-    public void SignInEntity(UserEntity userEntity) {this.userEntity = userEntity; }
 }

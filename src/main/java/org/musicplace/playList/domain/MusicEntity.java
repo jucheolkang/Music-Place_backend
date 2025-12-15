@@ -13,45 +13,38 @@ import org.hibernate.annotations.Comment;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MusicEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "MUSIC_ID", nullable = false)
-    private Long music_id;
+    @Column(name = "MUSIC_ID")
+    private Long musicId;
+
+    @Column(name = "playlist_id", nullable = false)
+    private Long playlistId;
 
     @Column(name = "TITLE", nullable = false)
-    @Comment("노래 제목")
-    private String vidioTitle;
-
-    @Column(name = "DELETE_STATE", nullable = false)
-    @Comment("삭제여부")
-    private boolean musicDelete = false;
+    private String videoTitle;
 
     @Column(name = "VIDIO_ID", nullable = false)
-    @Comment("비디오 아이디")
-    private String vidioId;
+    private String videoId;
 
-    @Column(name = "VIDIO_IMGE", nullable = true)
-    @Comment("비디오 이미지")
-    private String vidioImage;
+    @Column(name = "VIDIO_IMGE")
+    private String videoImage;
 
-    @JsonBackReference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "playlist_id")
-    private PLEntity plEntity;
+    @Column(name = "DELETE_STATE", nullable = false)
+    private boolean musicDelete = false;
 
     @Builder
-    public MusicEntity(String vidioTitle, String vidioId, String vidioImage) {
-        this.vidioTitle = vidioTitle;
-        this.vidioId = vidioId;
-        this.vidioImage = vidioImage;
+    public MusicEntity(Long playlistId, String videoTitle, String videoId, String videoImage) {
+        this.playlistId = playlistId;
+        this.videoTitle = videoTitle;
+        this.videoId = videoId;
+        this.videoImage = videoImage;
     }
 
-    public void setPlEntity(PLEntity plEntity) {
-        this.plEntity = plEntity;
+    public void delete() {
+        this.musicDelete = true;
     }
-
-    public void delete () {
-        musicDelete = true;
-    }
+}
 
 }
