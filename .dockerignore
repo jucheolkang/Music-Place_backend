@@ -28,7 +28,7 @@ db/redis/data
 
 # Docker
 Dockerfile
-docker-compose.yml
+docker-compose-test.yml
 .dockerignore
 
 # Documentation
