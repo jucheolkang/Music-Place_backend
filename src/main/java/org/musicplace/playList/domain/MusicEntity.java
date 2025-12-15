@@ -46,5 +46,3 @@ public class MusicEntity {
         this.musicDelete = true;
     }
 }
-
-}
