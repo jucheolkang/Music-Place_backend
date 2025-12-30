@@ -1,20 +1,16 @@
 package org.musicplace.playList.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Comment;
+
 import org.musicplace.global.jpa.AuditInformation;
 
 @Entity
@@ -22,49 +18,41 @@ import org.musicplace.global.jpa.AuditInformation;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CommentEntity extends AuditInformation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "COMMENT_ID", nullable = false)
-    private Long comment_id;
+    @Column(name = "COMMENT_ID")
+    private Long commentId;
 
-    @Column(name = "member_id", nullable = false, length = 64)
-    @Comment("아이디")
+    @Column(name = "playlist_id", nullable = false)
+    private Long playlistId;
+
+    @Column(name = "member_id", nullable = false)
     private String memberId;
 
     @Column(name = "NICKNAME", nullable = false)
-    @Comment("유저 닉네임")
-    private String nickName;
+    private String nickname;
 
     @Column(name = "COMMENT", nullable = false)
-    @Comment("댓글")
     private String userComment;
 
-    @Column(name = "profile_img_url", nullable = true)
-    @Comment("프로필 이미지")
-    private String profile_img_url;
+    @Column(name = "profile_img_url")
+    private String profileImgUrl;
 
     @Column(name = "DELETE_STATE", nullable = false)
-    @Comment("삭제여부")
     private boolean commentDelete = false;
 
-    @JsonBackReference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "playlist_id")
-    private PLEntity plEntity;
-
     @Builder
-    public CommentEntity(String memberId, String nickName, String comment, String profile_img_url) {
+    public CommentEntity(Long playlistId, String memberId, String nickname,
+                         String userComment, String profileImgUrl) {
+        this.playlistId = playlistId;
         this.memberId = memberId;
-        this.nickName = nickName;
-        this.userComment = comment;
-        this.profile_img_url = profile_img_url;
+        this.nickname = nickname;
+        this.userComment = userComment;
+        this.profileImgUrl = profileImgUrl;
     }
 
-    public void setPlEntity(PLEntity plEntity) {
-        this.plEntity = plEntity;
-    }
-
-    public void delete () {
-        commentDelete = true;
+    public void delete() {
+        this.commentDelete = true;
     }
 }

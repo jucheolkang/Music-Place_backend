@@ -1,4 +1,4 @@
-package org.musicplace.member.dto;
+package org.musicplace.user.dto;
 
 import lombok.AccessLevel;
 import lombok.Builder;

@@ -5,7 +5,7 @@ import org.musicplace.global.security.config.CustomUserDetails;
 import org.musicplace.global.security.dto.LoginResponseDto;
 import org.musicplace.global.security.jwt.JwtTokenUtil;
 import org.musicplace.global.security.dto.LoginRequestDto;
-import org.musicplace.member.service.SignInService;
+import org.musicplace.user.service.SignInService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;

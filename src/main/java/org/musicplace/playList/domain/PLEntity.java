@@ -1,88 +1,66 @@
 package org.musicplace.playList.domain;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.Comment;
-import org.musicplace.global.jpa.AuditInformation;
-import org.musicplace.member.domain.SignInEntity;
-import org.musicplace.playList.dto.MusicSaveDto;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.musicplace.global.jpa.AuditInformation;
 
 
 @Entity
-@Getter
 @Table(name = "PLAYLIST")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PLEntity extends AuditInformation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "PLAYLIST_ID", nullable = false)
-    private Long playlist_id;
+    @Column(name = "PLAYLIST_ID")
+    private Long playlistId;
+
+    @Column(name = "member_id", nullable = false)
+    private String memberId; // 🔥 FK 직접 참조
 
     @Column(name = "TITLE", nullable = false)
-    @Comment("플리 제목")
-    private String PLTitle;
+    private String title;
 
-    @Column(name = "nickname", nullable = false, length = 50)
-    @Comment("닉네임")
+    @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "COVER_IMG", nullable = true)
-    @Comment("커버 이미지")
-    private String cover_img;
+    @Column(name = "COVER_IMG")
+    private String coverImg;
 
     @Column(name = "ONOFF", nullable = false)
-    @Comment("공개여부")
+    @Enumerated(EnumType.STRING)
     private OnOff onOff;
 
-    @Column(name = "COMMENT", nullable = true)
-    @Comment("플리 설명")
+    @Column(name = "COMMENT")
     private String comment;
 
     @Column(name = "DELETE_STATE", nullable = false)
-    @Comment("삭제여부")
-    private boolean PLDelete = false;
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "plEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<MusicEntity> musicEntities = new ArrayList<>();
-
-    @JsonManagedReference
-    @OneToMany(mappedBy = "plEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CommentEntity> commentEntities = new ArrayList<>();
-
-    @JsonManagedReference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
-    private SignInEntity signInEntity;
-
+    private boolean deleteState = false;
 
     @Builder
-    public PLEntity(String title, String nickname, OnOff onOff, String cover_img, String comment) {
-        this.PLTitle = title;
+    public PLEntity(String memberId, String title, String nickname,
+                    OnOff onOff, String coverImg, String comment) {
+        this.memberId = memberId;
+        this.title = title;
         this.nickname = nickname;
         this.onOff = onOff;
+        this.coverImg = coverImg;
         this.comment = comment;
-        this.cover_img = cover_img;
     }
 
-    public void PLUpdate(String title, OnOff onOff, String cover_img, String comment) {
-        this.PLTitle = title;
+    public void plUpdate(String title, OnOff onOff, String cover_img, String comment) {
+        this.title = title;
         this.onOff = onOff;
         this.comment = comment;
-        this.cover_img = cover_img;
+        this.coverImg = cover_img;
     }
 
-    public void delete () {
-        PLDelete = true;
+    public void delete() {
+        this.deleteState = true;
     }
-
-    public void SignInEntity(SignInEntity signInEntity) {this.signInEntity = signInEntity; }
 }

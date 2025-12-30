@@ -16,7 +16,7 @@ public class FollowController {
 
     @PostMapping()
     public Long FollowSave(@RequestBody FollowSaveDto followSaveDto) {
-        return followService.FollowSave(followSaveDto);
+        return followService.followSave(followSaveDto);
     }
 
     @DeleteMapping("/{follow_id}")
