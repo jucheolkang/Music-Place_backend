@@ -51,6 +51,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return !userEntity.getDelete_account();
+        return !userEntity.getDeleteAccount();
     }
 }
