@@ -1,12 +1,11 @@
 package org.musicplace.playList.domain;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Comment;
+
 
 @Entity
 @Table(name = "PLMUSIC")
