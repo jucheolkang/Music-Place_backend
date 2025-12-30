@@ -2,142 +2,105 @@ package org.musicplace.playList.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.global.exception.ExceptionHandler;
-import org.musicplace.user.domain.UserEntity;
-import org.musicplace.user.service.SignInService;
-import org.musicplace.playList.domain.OnOff;
 import org.musicplace.playList.domain.PLEntity;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
 import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.repository.PLRepository;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PLService {
 
     private final PLRepository plRepository;
-    private final SignInService signInService;
+    private final UserRepository userRepository;
 
     @Transactional
-    public Long PLsave(PLSaveDto plSaveDto) {
-        String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = signInService.SignInFindById(member_id);
-        signInService.CheckSignInDelete(userEntity);
-        PLEntity plEntity = plRepository.save(PLEntity.builder()
-                .title(plSaveDto.getTitle())
-                .onOff(plSaveDto.getOnOff())
-                .comment(plSaveDto.getComment())
-                .cover_img(plSaveDto.getCover_img())
-                .nickname(userEntity.getNickname())
-                .build());
-        userEntity.getPlaylistEntities().add(plEntity);
-        plEntity.SignInEntity(userEntity);
-        plRepository.save(plEntity);
-        return plEntity.getPlaylist_id();
-    }
+    public Long plSave(String memberId, PLSaveDto dto) {
 
-    @Transactional
-    public void PLUpdate(Long id, PLUpdateDto plUpdateDto) {
-        PLEntity plEntity = PLFindById(id);
-        CheckPLDeleteStatus(plEntity);
-        plEntity.PLUpdate(
-                plUpdateDto.getTitle(),
-                plUpdateDto.getOnOff(),
-                plUpdateDto.getCover_img(),
-                plUpdateDto.getComment());
-    }
-
-    @Transactional
-    public void PLDelete(Long id) {
-        PLEntity plEntity = PLFindById(id);
-        CheckPLDeleteStatus(plEntity);
-        plEntity.delete();
-    }
-
-    public Long PLCount() {
-        String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = signInService.SignInFindById(member_id);
-        return userEntity.getPlaylistEntities().stream().count();
-    }
-
-    public Long otherPLCount(String otherMemberId) {
-        UserEntity userEntity = signInService.SignInFindById(otherMemberId);
-        return userEntity.getPlaylistEntities().stream()
-                .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public))
-                .count();
-    }
-
-    public List<ResponsePLDto> PLFindAll() {
-        String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = signInService.SignInFindById(member_id);
-        List<ResponsePLDto> nonDeletedPlayLists = userEntity.getPlaylistEntities()
-                .stream()
-                .filter(plEntity -> !plEntity.isPLDelete())
-                .map(plEntity -> ResponsePLDto.builder()
-                        .playlist_id(plEntity.getPlaylist_id())
-                        .nickname(plEntity.getNickname())
-                        .PLTitle(plEntity.getPLTitle())
-                        .cover_img(plEntity.getCover_img())
-                        .onOff(plEntity.getOnOff())
-                        .comment(plEntity.getComment())
-                        .build())
-                .collect(Collectors.toList());
-        return nonDeletedPlayLists;
-    }
-
-    public List<ResponsePLDto> getOtherUserPL(String memberId) {
-        UserEntity userEntity = signInService.SignInFindById(memberId);
-        List<ResponsePLDto> publicPlaylist = userEntity.getPlaylistEntities()
-                .stream()
-                .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public))
-                .map(plEntity -> ResponsePLDto.builder()
-                        .playlist_id(plEntity.getPlaylist_id())
-                        .nickname(plEntity.getNickname())
-                        .PLTitle(plEntity.getPLTitle())
-                        .cover_img(plEntity.getCover_img())
-                        .onOff(plEntity.getOnOff())
-                        .comment(plEntity.getComment())
-                        .build())
-                .collect(Collectors.toList());
-        return publicPlaylist;
-    }
-
-
-    public List<ResponsePLDto> PLFindPublic() {
-        List<PLEntity> playListAll = plRepository.findAll();
-        List<ResponsePLDto> publicPlayLists = playListAll.stream()
-                .filter(plEntity -> plEntity.getOnOff().equals(OnOff.Public) && !plEntity.isPLDelete())
-                .map(plEntity -> ResponsePLDto.builder()
-                        .playlist_id(plEntity.getPlaylist_id())
-                        .member_id(plEntity.getUserEntity().getMemberId())
-                        .PLTitle(plEntity.getPLTitle())
-                        .nickname(plEntity.getNickname())
-                        .cover_img(plEntity.getCover_img())
-                        .comment(plEntity.getComment())
-                        .build())
-                .collect(Collectors.toList());
-
-        return publicPlayLists;
-    }
-
-    public PLEntity PLFindById(Long id) {
-        PLEntity plEntity = plRepository.findById(id)
+        UserEntity user = userRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
-        return plEntity;
+
+        if (user.getDeleteAccount()) {
+            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+        }
+
+        PLEntity playlist = PLEntity.builder()
+                .memberId(memberId)
+                .title(dto.getTitle())
+                .onOff(dto.getOnOff())
+                .comment(dto.getComment())
+                .coverImg(dto.getCover_img())
+                .nickname(user.getNickname())
+                .build();
+
+        plRepository.save(playlist);
+        return playlist.getPlaylistId();
     }
 
-    public void CheckPLDeleteStatus(PLEntity plEntity) {
-        if (plEntity.isPLDelete()) {
+
+    @Transactional
+    public void plUpdate(Long playlistId, PLUpdateDto dto) {
+        PLEntity pl = findActivePlaylist(playlistId);
+        pl.plUpdate(
+                dto.getTitle(),
+                dto.getOnOff(),
+                dto.getCover_img(),
+                dto.getComment()
+        );
+    }
+
+    @Transactional
+    public void plDelete(Long playlistId) {
+        PLEntity pl = findActivePlaylist(playlistId);
+        pl.delete();
+    }
+
+
+    public List<ResponsePLDto> findMyPlaylists(String memberId) {
+        return plRepository.findMyPlaylists(memberId);
+    }
+
+    public Long countMyPlaylists(String memberId) {
+        return plRepository.countMyPlaylists(memberId);
+    }
+
+    public Long countOtherPublicPlaylists(String otherMemberId) {
+        return plRepository.countOtherPublicPlaylists(otherMemberId);
+    }
+
+    public List<ResponsePLDto> getOtherUserPublicPlaylists(String otherMemberId) {
+        return plRepository.findOtherUserPublicPlaylists(otherMemberId);
+    }
+
+    public List<ResponsePLDto> findPublicPlaylists() {
+        return plRepository.findAllPublicPlaylists();
+    }
+
+
+    public void validatePlaylistActive(Long playlistId) {
+        boolean exists =
+                plRepository.existsByPlaylistIdAndPLDeleteFalse(playlistId);
+
+        if (!exists) {
             throw new ExceptionHandler(ErrorCode.ID_DELETE);
         }
     }
 
+    private PLEntity findActivePlaylist(Long playlistId) {
+        PLEntity pl = plRepository.findById(playlistId)
+                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
 
+        if (pl.isDeleteState()) {
+            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+        }
+        return pl;
+    }
 }

@@ -1,17 +1,12 @@
 package org.musicplace.playList.domain;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Comment;
-import org.musicplace.global.jpa.AuditInformation;
-import org.musicplace.user.domain.UserEntity;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.musicplace.global.jpa.AuditInformation;
 
 
 @Entity
@@ -56,6 +51,13 @@ public class PLEntity extends AuditInformation {
         this.onOff = onOff;
         this.coverImg = coverImg;
         this.comment = comment;
+    }
+
+    public void plUpdate(String title, OnOff onOff, String cover_img, String comment) {
+        this.title = title;
+        this.onOff = onOff;
+        this.comment = comment;
+        this.coverImg = cover_img;
     }
 
     public void delete() {
