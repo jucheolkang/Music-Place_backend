@@ -4,86 +4,85 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.global.exception.ExceptionHandler;
-import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.playList.domain.CommentEntity;
-import org.musicplace.playList.domain.MusicEntity;
-import org.musicplace.playList.domain.PLEntity;
 import org.musicplace.playList.dto.CommentSaveDto;
 import org.musicplace.playList.dto.ResponseCommentDto;
 import org.musicplace.playList.repository.CommentRepository;
+import org.musicplace.user.domain.UserEntity;
+import org.musicplace.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CommentService {
 
+    private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final PLService plService;
 
     @Transactional
-    public Long CommentSave(Long PLId, CommentSaveDto commentSaveDto) {
-        String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        PLEntity plEntity = plService.PLFindById(PLId);
-        plService.CheckPLDeleteStatus(plEntity);
-        CommentEntity commentEntity = CommentEntity.builder()
-                .memberId(member_id)
-                .comment(commentSaveDto.getComment())
-                .nickName(commentSaveDto.getNickName())
-                .profile_img_url(commentSaveDto.getProfile_img_url())
+    public Long commentSave(String memberId, Long playlistId, CommentSaveDto dto) {
+
+        UserEntity user = userRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+
+        if (user.getDeleteAccount()) {
+            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+        }
+
+        plService.validatePlaylistActive(playlistId);
+
+        CommentEntity comment = CommentEntity.builder()
+                .playlistId(playlistId)
+                .memberId(memberId)
+                .nickname(user.getNickname())
+                .userComment(dto.getComment())
+                .profileImgUrl(dto.getProfile_img_url())
                 .build();
-        commentEntity.setPlEntity(plEntity);
-        plEntity.getCommentEntities().add(commentEntity);
-        commentRepository.save(commentEntity);
-        return commentEntity.getComment_id();
+
+        commentRepository.save(comment);
+        return comment.getCommentId();
     }
 
     @Transactional
-    public boolean CommentDelete(Long PLId,Long CommentId) {
-        PLEntity plEntity = plService.PLFindById(PLId);
-        plService.CheckPLDeleteStatus(plEntity);
-        CommentEntity commentEntity = CommentFindById(plEntity, CommentId);
-        CheckCommentDeleteStatus(commentEntity);
-        commentEntity.delete();
-        return commentEntity.isCommentDelete();
-    }
+    public Boolean commentDelete(Long playlistId, Long commentId) {
+        plService.validatePlaylistActive(playlistId);
 
-    public List<ResponseCommentDto> CommentFindAll(Long PLId) {
-        PLEntity plEntity = plService.PLFindById(PLId);
-        plService.CheckPLDeleteStatus(plEntity);
+        CommentEntity comment = commentRepository
+                .findByIdAndPlaylistId(commentId, playlistId)
+                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
 
-        List<ResponseCommentDto> nonDeletedComment = plEntity.getCommentEntities()
-                .stream()
-                .filter(comment -> !comment.isCommentDelete())
-                .map(comment -> ResponseCommentDto.builder()
-                        .memberId(comment.getMemberId())
-                        .nickName(comment.getNickName())
-                        .userComment(comment.getUserComment())
-                        .profile_img_url(comment.getProfile_img_url())
-                        .build())
-                .collect(Collectors.toList());
-
-        return nonDeletedComment;
-    }
-
-    public CommentEntity CommentFindById(PLEntity plEntity, Long CommentId) {
-        CommentEntity commentEntity = plEntity.getCommentEntities()
-                .stream()
-                .filter(comment -> comment.getComment_id().equals(CommentId))
-                .findFirst()
-                .orElse(null);
-        if (commentEntity == null) {
-            throw new ExceptionHandler(ErrorCode.ID_NOT_FOUND);
-        }
-        return commentEntity;
-    }
-
-    public void CheckCommentDeleteStatus(CommentEntity commentEntity) {
-        if (commentEntity.isCommentDelete()) {
+        if (comment.isCommentDelete()) {
             throw new ExceptionHandler(ErrorCode.ID_DELETE);
         }
+
+        comment.delete();
+        return comment.isCommentDelete();
+    }
+
+    public List<ResponseCommentDto> commentFindAll(String memberId, Long playlistId) {
+
+        UserEntity user = userRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+
+        if (user.getDeleteAccount()) {
+            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+        }
+
+        plService.validatePlaylistActive(playlistId);
+
+        return commentRepository
+                .findByPlaylistIdAndCommentDeleteFalse(playlistId)
+                .stream()
+                .map(c -> ResponseCommentDto.builder()
+                        .memberId(c.getMemberId())
+                        .nickName(user.getNickname())
+                        .userComment(c.getUserComment())
+                        .profile_img_url(c.getProfileImgUrl())
+                        .build())
+                .toList();
     }
 }
+
