@@ -10,7 +10,7 @@ import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.dto.SignInGetUserDataDto;
 import org.musicplace.user.dto.SignInSaveDto;
 import org.musicplace.user.dto.SignInUpdateDto;
-import org.musicplace.user.repository.SignInRepository;
+import org.musicplace.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +19,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SignInService {
-    private final SignInRepository signInRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public void SignInSave(SignInSaveDto signInSaveDto) {
-        signInRepository.save(UserEntity.builder()
+        userRepository.save(UserEntity.builder()
                 .memberId(signInSaveDto.getMember_id())
                 .pw(passwordEncoder.encode(signInSaveDto.getPw()))
                 .gender(signInSaveDto.getGender())
@@ -70,12 +70,12 @@ public class SignInService {
 
 
     public UserEntity SignInFindById(String member_id) {
-        return signInRepository.findById(member_id)
+        return userRepository.findById(member_id)
                 .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
     }
 
     public Boolean SignInCheckSameId(String member_id) {
-        List<UserEntity> userEntityList = signInRepository.findAll();
+        List<UserEntity> userEntityList = userRepository.findAll();
         for (UserEntity getListUser : userEntityList) {
             if(getListUser.getMemberId().equals(member_id)) {
                 return false;
@@ -91,7 +91,7 @@ public class SignInService {
     }
 
     public String ForgetPw(String member_id, String email) {
-        UserEntity userEntity = signInRepository.findById(member_id)
+        UserEntity userEntity = userRepository.findById(member_id)
                 .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
         if(userEntity.getEmail().equals(email)) {
             return userEntity.getPw();
@@ -100,7 +100,7 @@ public class SignInService {
     }
 
     public String ForgetId(String pw, String email) {
-        List<UserEntity> userEntityList = signInRepository.findAll();
+        List<UserEntity> userEntityList = userRepository.findAll();
         String result = null;
         for(UserEntity n : userEntityList) {
             if(n.getPw().equals(pw) && n.getEmail().equals(email)) {
@@ -113,7 +113,7 @@ public class SignInService {
 
 
     public CustomUserDetails authenticate(String id, String password) {
-        UserEntity user = signInRepository.findById(id)
+        UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
         if (user.getDeleteAccount()) {
             throw new ExceptionHandler(ErrorCode.ID_DELETE);
