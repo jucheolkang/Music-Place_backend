@@ -57,12 +57,13 @@ public class SecurityConfig {
                 // MDC 생성
                 .addFilterBefore(
                         loggingMdcFilter,
-                        UsernamePasswordAuthenticationFilter.class
+                        JwtAuthenticationFilter.class
                 )
-                // jwt 인증
-                .addFilterAfter(
+
+                // JWT 인증
+                .addFilterBefore(
                         jwtAuthenticationFilter,
-                        LoggingMdcFilter.class
+                        UsernamePasswordAuthenticationFilter.class
                 );
         return http.build();
     }

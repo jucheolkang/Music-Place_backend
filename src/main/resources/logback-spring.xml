@@ -1,25 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
+<configuration scan="true">
 
+    <!-- ========================================================= -->
+    <!-- Property -->
+    <!-- ========================================================= -->
+
+    <property name="APP_NAME" value="music-place"/>
     <property name="LOG_PATH" value="logs"/>
 
+    <property name="CONSOLE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %cyan(%logger{36}) [%X{traceId}] - %msg%n"/>
+
+    <!-- ========================================================= -->
     <!-- Console -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- ========================================================= -->
+
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
         <encoder>
-            <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS}
-                [%thread]
-                %-5level
-                [%X{traceId}]
-                [%X{requestId}]
-                [%X{userId}]
-                %logger{36}
-                - %msg%n
-            </pattern>
+            <pattern>${CONSOLE_PATTERN}</pattern>
         </encoder>
+
     </appender>
 
-    <!-- Rolling JSON File -->
+    <!-- ========================================================= -->
+    <!-- JSON File -->
+    <!-- ========================================================= -->
+
     <appender name="JSON_FILE"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
 
@@ -29,12 +37,12 @@
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
 
             <fileNamePattern>
-                ${LOG_PATH}/archive/application.%d{yyyy-MM-dd}.%i.log
+                ${LOG_PATH}/application.%d{yyyy-MM-dd}.%i.log.gz
             </fileNamePattern>
 
-            <maxFileSize>100MB</maxFileSize>
-
             <maxHistory>14</maxHistory>
+
+            <maxFileSize>100MB</maxFileSize>
 
             <totalSizeCap>5GB</totalSizeCap>
 
@@ -56,10 +64,14 @@
                 </logLevel>
 
                 <!-- Thread -->
-                <threadName/>
+                <threadName>
+                    <fieldName>thread</fieldName>
+                </threadName>
 
                 <!-- Logger -->
-                <loggerName/>
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                </loggerName>
 
                 <!-- Message -->
                 <message/>
@@ -72,8 +84,14 @@
                     <fieldName>stackTrace</fieldName>
                 </stackTrace>
 
-                <!-- Context -->
-                <context/>
+                <!-- Application Name -->
+                <pattern>
+                    <pattern>
+                        {
+                        "application":"music-place"
+                        }
+                    </pattern>
+                </pattern>
 
             </providers>
 
@@ -81,32 +99,69 @@
 
     </appender>
 
-    <!-- Hibernate SQL -->
+    <!-- ========================================================= -->
+    <!-- Async -->
+    <!-- ========================================================= -->
+
+    <appender name="ASYNC_JSON"
+              class="ch.qos.logback.classic.AsyncAppender">
+
+        <queueSize>8192</queueSize>
+
+        <discardingThreshold>0</discardingThreshold>
+
+        <neverBlock>true</neverBlock>
+
+        <appender-ref ref="JSON_FILE"/>
+
+    </appender>
+
+    <!-- ========================================================= -->
+    <!-- Spring -->
+    <!-- ========================================================= -->
+
+    <logger name="org.springframework"
+            level="INFO"/>
+
+    <!-- ========================================================= -->
+    <!-- Hibernate -->
+    <!-- ========================================================= -->
+
     <logger name="org.hibernate.SQL"
             level="DEBUG"/>
 
-    <!-- Bind Parameter -->
     <logger name="org.hibernate.orm.jdbc.bind"
             level="TRACE"/>
 
-    <!-- Hikari -->
+    <logger name="org.hibernate.stat"
+            level="DEBUG"/>
+
+    <!-- ========================================================= -->
+    <!-- HikariCP -->
+    <!-- ========================================================= -->
+
     <logger name="com.zaxxer.hikari"
-            level="INFO"/>
+            level="DEBUG"/>
 
-    <!-- Spring JDBC -->
-    <logger name="org.springframework.jdbc"
-            level="INFO"/>
-
+    <!-- ========================================================= -->
     <!-- Redis -->
-    <logger name="io.lettuce"
+    <!-- ========================================================= -->
+
+    <logger name="org.springframework.data.redis"
+            level="DEBUG"/>
+
+    <logger name="io.lettuce.core"
             level="INFO"/>
 
+    <!-- ========================================================= -->
     <!-- Root -->
+    <!-- ========================================================= -->
+
     <root level="INFO">
 
         <appender-ref ref="CONSOLE"/>
 
-        <appender-ref ref="JSON_FILE"/>
+        <appender-ref ref="ASYNC_JSON"/>
 
     </root>
 
