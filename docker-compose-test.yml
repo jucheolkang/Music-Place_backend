@@ -60,28 +60,43 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: musicplace_app
+
     restart: always
+
     networks:
       - musicplace-network
+
     ports:
-      - "8080:8080"  # Application port
-      - "8081:8081"  # Management/Actuator port
+      - "8080:8080"
+      - "8081:8081"
+
+    volumes:
+      - ./logs:/app/logs
+
     depends_on:
       mysql:
         condition: service_healthy
+
       redis:
         condition: service_healthy
+
     environment:
       SPRING_PROFILES_ACTIVE: loadtest
+
       MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_PASSWORD}
       REDIS_PASSWORD: ${DOCKER_REDIS_PASSWORD}
+
       JAVA_OPTS: "-Xms512m -Xmx1g -XX:+UseG1GC"
+
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TIME: ${JWT_ACCESS_TIME}
+
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      test: [ "CMD","curl","-f","http://localhost:8081/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,23 +127,35 @@ services:
   # Grafana (Visualization)
   # ===================================
   grafana:
+
     image: grafana/grafana:latest
+
     container_name: musicplace_grafana
+
     restart: always
+
     networks:
       - musicplace-network
+
     ports:
       - "3000:3000"
+
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
+
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
       - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_started
+
+      loki:
+        condition: service_healthy
 
   # ===================================
   # InfluxDB (k6 Results Storage)
@@ -174,7 +201,70 @@ services:
     profiles:
       - test
 
+
+  # ===================================
+  # Loki
+  # ===================================
+  loki:
+
+    image: grafana/loki:3.0.0
+
+    container_name: musicplace_loki
+
+    restart: always
+
+    networks:
+      - musicplace-network
+
+    ports:
+      - "3100:3100"
+
+    command:
+      - "-config.file=/etc/loki/loki-config.yml"
+
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml
+      - loki-data:/loki
+
+    healthcheck:
+      test: ["CMD","wget","--spider","-q","http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+
+  # ===================================
+  # Promtail
+  # ===================================
+  promtail:
+
+    image: grafana/promtail:3.0.0
+
+    container_name: musicplace_promtail
+
+    restart: always
+
+    networks:
+      - musicplace-network
+
+    command:
+      - "-config.file=/etc/promtail/promtail-config.yml"
+
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - ./logs:/logs
+
+    depends_on:
+      loki:
+        condition: service_healthy
+
 volumes:
+
   grafana-data:
+
   prometheus-data:
+
   influxdb-data:
+
+  loki-data:
