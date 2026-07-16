@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.musicplace.global.security.config.CustomUserDetails;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.dto.SignInGetUserDataDto;
@@ -71,7 +71,7 @@ public class SignInService {
 
     public UserEntity SignInFindById(String member_id) {
         return userRepository.findById(member_id)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
     }
 
     public Boolean SignInCheckSameId(String member_id) {
@@ -86,13 +86,13 @@ public class SignInService {
 
     public void CheckSignInDelete(UserEntity userEntity) {
         if (userEntity.getDeleteAccount()) {
-            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
     }
 
     public String ForgetPw(String member_id, String email) {
         UserEntity userEntity = userRepository.findById(member_id)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
         if(userEntity.getEmail().equals(email)) {
             return userEntity.getPw();
         }
@@ -114,14 +114,14 @@ public class SignInService {
 
     public CustomUserDetails authenticate(String id, String password) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
         if (user.getDeleteAccount()) {
-            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
         if (passwordEncoder.matches(password, user.getPw())) {
             return new CustomUserDetails(user);
         }
-        throw new ExceptionHandler(ErrorCode.INVALID_CREDENTIALS);
+        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
     }
 
 

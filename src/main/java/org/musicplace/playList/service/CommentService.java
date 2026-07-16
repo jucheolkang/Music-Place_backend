@@ -3,7 +3,7 @@ package org.musicplace.playList.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.musicplace.playList.domain.CommentEntity;
 import org.musicplace.playList.dto.CommentSaveDto;
 import org.musicplace.playList.dto.ResponseCommentDto;
@@ -26,10 +26,10 @@ public class CommentService {
     public Long commentSave(String memberId, Long playlistId, CommentSaveDto dto) {
 
         UserEntity user = userRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (user.getDeleteAccount()) {
-            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
 
         plService.validatePlaylistActive(playlistId);
@@ -52,10 +52,10 @@ public class CommentService {
 
         CommentEntity comment = commentRepository
                 .findByIdAndPlaylistId(commentId, playlistId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (comment.isCommentDelete()) {
-            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
 
         comment.delete();
@@ -65,10 +65,10 @@ public class CommentService {
     public List<ResponseCommentDto> commentFindAll(String memberId, Long playlistId) {
 
         UserEntity user = userRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (user.getDeleteAccount()) {
-            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
 
         plService.validatePlaylistActive(playlistId);

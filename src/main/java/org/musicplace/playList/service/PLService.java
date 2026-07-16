@@ -3,7 +3,7 @@ package org.musicplace.playList.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.musicplace.playList.domain.PLEntity;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
@@ -26,10 +26,10 @@ public class PLService {
     public Long plSave(String memberId, PLSaveDto dto) {
 
         UserEntity user = userRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (user.getDeleteAccount()) {
-            throw new ExceptionHandler(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
 
         PLEntity playlist = PLEntity.builder()
@@ -90,16 +90,16 @@ public class PLService {
                 plRepository.existsByPlaylistIdAndPLDeleteFalse(playlistId);
 
         if (!exists) {
-            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
     }
 
     private PLEntity findActivePlaylist(Long playlistId) {
         PLEntity pl = plRepository.findById(playlistId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (pl.isDeleteState()) {
-            throw new ExceptionHandler(ErrorCode.ID_DELETE);
+            throw new BusinessException(ErrorCode.MEMBER_DELETED);
         }
         return pl;
     }
