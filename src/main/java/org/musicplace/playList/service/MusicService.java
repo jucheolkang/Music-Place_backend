@@ -3,7 +3,7 @@ package org.musicplace.playList.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.musicplace.playList.domain.MusicEntity;
 import org.musicplace.playList.dto.MusicSaveDto;
 import org.musicplace.playList.dto.ResponseMusicDto;
@@ -42,12 +42,12 @@ public class MusicService {
                 musicRepository.findAllByIdInAndPlaylistId(musicIds, playlistId);
 
         if (musics.size() != musicIds.size()) {
-            throw new ExceptionHandler(ErrorCode.ID_NOT_FOUND);
+            throw new BusinessException(ErrorCode.ID_NOT_FOUND);
         }
 
         for (MusicEntity music : musics) {
             if (music.isMusicDelete()) {
-                throw new ExceptionHandler(ErrorCode.ID_DELETE);
+                throw new BusinessException(ErrorCode.MEMBER_DELETED);
             }
             music.delete();
         }

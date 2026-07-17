@@ -1,0 +1,53 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+
+  - job_name: musicplace
+
+    static_configs:
+      - targets:
+          - localhost
+
+        labels:
+          job: musicplace
+          application: music-place
+          service: springboot
+          environment: local
+          __path__: /logs/application.log
+
+    pipeline_stages:
+
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            thread: thread
+            message: message
+            stackTrace: stackTrace
+            traceId: traceId
+            requestId: requestId
+            userId: userId
+            method: method
+            uri: uri
+            status: status
+            elapsedTime: elapsedTime
+
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+
+      - labels:
+          level:
+          method:
+          status:
+          application:
+          environment:

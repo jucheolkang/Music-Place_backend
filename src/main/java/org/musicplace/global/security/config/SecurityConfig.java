@@ -1,6 +1,7 @@
 package org.musicplace.global.security.config;
 
 import lombok.RequiredArgsConstructor;
+import org.musicplace.global.logging.LoggingMdcFilter;
 import org.musicplace.global.security.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +23,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final LoggingMdcFilter loggingMdcFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, LoggingMdcFilter loggingMdcFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
@@ -52,8 +54,18 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
+                // MDC 생성
+                .addFilterBefore(
+                        loggingMdcFilter,
+                        JwtAuthenticationFilter.class
+                )
+
+                // JWT 인증
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
         return http.build();
     }
 

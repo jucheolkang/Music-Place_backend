@@ -7,7 +7,7 @@ import org.musicplace.follow.dto.FollowSaveDto;
 import org.musicplace.follow.dto.FollowResponseDto;
 import org.musicplace.follow.repository.FollowRepository;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.service.SignInService;
@@ -30,12 +30,12 @@ public class FollowService {
         signInService.CheckSignInDelete(user);
 
         if (memberId.equals(dto.getTarget_id())) {
-            throw new ExceptionHandler(ErrorCode.NOT_FOLLOW_SELF);
+            throw new BusinessException(ErrorCode.CANNOT_FOLLOW_SELF);
         }
 
         // 🔥 중복 팔로우 방지 (DB + 조회)
         if (followRepository.existsByMemberIdAndTargetId(memberId, dto.getTarget_id())) {
-            throw new ExceptionHandler(ErrorCode.FOLLOW_SAME_ID);
+            throw new BusinessException(ErrorCode.CANNOT_FOLLOW_SELF);
         }
 
         FollowEntity follow = FollowEntity.builder()
@@ -54,10 +54,10 @@ public class FollowService {
         String memberId = MemberAuthorizationUtil.getLoginMemberId();
 
         FollowEntity follow = followRepository.findById(followId)
-                .orElseThrow(() -> new ExceptionHandler(ErrorCode.FOLLOW_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.FOLLOW_NOT_FOUND));
 
         if (!follow.getMemberId().equals(memberId)) {
-            throw new ExceptionHandler(ErrorCode.FOLLOW_NO_ID);
+            throw new BusinessException(ErrorCode.FOLLOW_NOT_FOUND);
         }
 
         followRepository.delete(follow);

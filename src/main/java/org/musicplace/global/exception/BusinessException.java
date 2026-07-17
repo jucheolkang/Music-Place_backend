@@ -2,11 +2,11 @@ package org.musicplace.global.exception;
 
 import lombok.Getter;
 
-public class ExceptionHandler extends RuntimeException{
+public class BusinessException extends RuntimeException{
     @Getter
     private final ErrorCode errorCode;
 
-    public ExceptionHandler(ErrorCode errorCode) {
+    public BusinessException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
     }

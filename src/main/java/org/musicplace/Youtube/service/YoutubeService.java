@@ -9,7 +9,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.google.api.services.youtube.model.SearchResult;
 import org.musicplace.Youtube.dto.YoutubeVidioDto;
 import org.musicplace.global.exception.ErrorCode;
-import org.musicplace.global.exception.ExceptionHandler;
+import org.musicplace.global.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -72,7 +72,7 @@ public class YoutubeService {
 
             return filteringResultList;
         }
-        throw new ExceptionHandler(ErrorCode.NOT_FOUND_RESULT);
+        throw new BusinessException(ErrorCode.RESULT_NOT_FOUND);
     }
 
 
@@ -116,7 +116,7 @@ public class YoutubeService {
             return videoList;
         }
 
-        throw new ExceptionHandler(ErrorCode.NOT_FOUND_RESULT);
+        throw new BusinessException(ErrorCode.RESULT_NOT_FOUND);
     }
 
 
