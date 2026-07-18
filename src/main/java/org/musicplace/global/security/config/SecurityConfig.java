@@ -46,8 +46,7 @@ public class SecurityConfig {
                                 "/metrics",
                                 "/health",
                                 "/info",
-                                "/targets",
-                                "/**"
+                                "/targets"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -58,13 +57,12 @@ public class SecurityConfig {
                 // MDC 생성
                 .addFilterBefore(
                         loggingMdcFilter,
-                        JwtAuthenticationFilter.class
-                )
-
-                // JWT 인증
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
+                )
+                // jwt 인증
+                .addFilterAfter(
+                        jwtAuthenticationFilter,
+                        LoggingMdcFilter.class
                 );
         return http.build();
     }

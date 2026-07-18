@@ -12,7 +12,7 @@ public interface PLRepository extends JpaRepository<PLEntity, Long> {
 
     /* ================== 기본 검증 ================== */
 
-    boolean existsByPlaylistIdAndPLDeleteFalse(Long playlistId);
+    boolean existsByPlaylistIdAndDeleteStateFalse(Long playlistId);
 
     /* ================== COUNT ================== */
 

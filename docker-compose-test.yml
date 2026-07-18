@@ -157,6 +157,9 @@ services:
       loki:
         condition: service_healthy
 
+      alertmanager:
+        condition: service_started
+
   # ===================================
   # InfluxDB (k6 Results Storage)
   # ===================================
@@ -257,6 +260,31 @@ services:
     depends_on:
       loki:
         condition: service_healthy
+
+
+  # ===================================
+  # Alertmanager
+  # ===================================
+
+  alertmanager:
+
+    image: prom/alertmanager:latest
+
+    container_name: musicplace_alertmanager
+
+    restart: always
+
+    networks:
+      - musicplace-network
+
+    ports:
+      - "9093:9093"
+
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
 
 volumes:
 

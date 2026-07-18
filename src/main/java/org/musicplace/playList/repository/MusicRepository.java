@@ -6,7 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MusicRepository extends JpaRepository<MusicEntity,Long> {
-    List<MusicEntity> findAllByIdInAndPlaylistId(List<Long> ids, Long playlistId);
+    List<MusicEntity> findAllByMusicIdInAndPlaylistId(
+            List<Long> ids,
+            Long playlistId
+    );
 
     List<MusicEntity> findByPlaylistIdAndMusicDeleteFalse(Long playlistId);
 }
