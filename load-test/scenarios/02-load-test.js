@@ -283,19 +283,46 @@ export function writingScenario() {
 
 // 결과 요약
 export function handleSummary(data) {
+
+    const now = new Date()
+        .toISOString()
+        .replace(/:/g, '-');
+
+    const totalRequests =
+        data.metrics.http_reqs?.values?.count ?? 0;
+
+    const failedRate =
+        (data.metrics.http_req_failed?.values?.rate ?? 0) * 100;
+
+    const avgResponse =
+        data.metrics.http_req_duration?.values?.avg ?? 0;
+
+    const p95 =
+        data.metrics.http_req_duration?.values?.["p(95)"] ?? 0;
+
+    const p99 =
+        data.metrics.http_req_duration?.values?.["p(99)"] ?? 0;
+
+    const dbOperations =
+        data.metrics.db_operations?.values?.count ?? 0;
+
+    const authFailures =
+        data.metrics.auth_failures?.values?.count ?? 0;
+
     console.log('\n========================================');
-    console.log('  Music Place Load Test Summary');
+    console.log('      Music Place Load Test Summary');
     console.log('========================================');
-    console.log(`Total Requests: ${data.metrics.http_reqs.values.count}`);
-    console.log(`Failed Requests: ${(data.metrics.http_req_failed.values.rate * 100).toFixed(2)}%`);
-    console.log(`Avg Response Time: ${data.metrics.http_req_duration.values.avg.toFixed(2)}ms`);
-    console.log(`P95 Response Time: ${data.metrics.http_req_duration.values['p(95)'].toFixed(2)}ms`);
-    console.log(`P99 Response Time: ${data.metrics.http_req_duration.values['p(99)'].toFixed(2)}ms`);
-    console.log(`DB Operations: ${data.metrics.db_operations.values.count}`);
-    console.log(`Auth Failures: ${data.metrics.auth_failures.values.count}`);
+    console.log(`Total Requests   : ${totalRequests}`);
+    console.log(`Failed Requests  : ${failedRate.toFixed(2)}%`);
+    console.log(`Average Response : ${avgResponse.toFixed(2)} ms`);
+    console.log(`P95 Response     : ${p95.toFixed(2)} ms`);
+    console.log(`P99 Response     : ${p99.toFixed(2)} ms`);
+    console.log(`DB Operations    : ${dbOperations}`);
+    console.log(`Auth Failures    : ${authFailures}`);
     console.log('========================================\n');
 
     return {
-        '/results/summary.json': JSON.stringify(data, null, 2),
+        [`/results/load-test-${now}.json`]:
+            JSON.stringify(data, null, 2)
     };
 }

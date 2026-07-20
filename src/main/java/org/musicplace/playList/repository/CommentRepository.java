@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CommentRepository extends JpaRepository<CommentEntity,Long> {
-    Optional<CommentEntity> findByIdAndPlaylistId(Long commentId, Long playlistId);
+    Optional<CommentEntity> findByCommentIdAndPlaylistId(
+            Long commentId,
+            Long playlistId
+    );
     List<CommentEntity> findByPlaylistIdAndCommentDeleteFalse(Long playlistId);
 }

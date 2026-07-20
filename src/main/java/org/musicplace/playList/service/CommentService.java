@@ -51,7 +51,7 @@ public class CommentService {
         plService.validatePlaylistActive(playlistId);
 
         CommentEntity comment = commentRepository
-                .findByIdAndPlaylistId(commentId, playlistId)
+                .findByCommentIdAndPlaylistId(commentId, playlistId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
 
         if (comment.isCommentDelete()) {

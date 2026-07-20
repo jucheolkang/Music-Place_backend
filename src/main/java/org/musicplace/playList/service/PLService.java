@@ -87,7 +87,7 @@ public class PLService {
 
     public void validatePlaylistActive(Long playlistId) {
         boolean exists =
-                plRepository.existsByPlaylistIdAndPLDeleteFalse(playlistId);
+                plRepository.existsByPlaylistIdAndDeleteStateFalse(playlistId);
 
         if (!exists) {
             throw new BusinessException(ErrorCode.MEMBER_DELETED);

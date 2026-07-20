@@ -39,7 +39,7 @@ public class MusicService {
         plService.validatePlaylistActive(playlistId);
 
         List<MusicEntity> musics =
-                musicRepository.findAllByIdInAndPlaylistId(musicIds, playlistId);
+                musicRepository.findAllByMusicIdInAndPlaylistId(musicIds, playlistId);
 
         if (musics.size() != musicIds.size()) {
             throw new BusinessException(ErrorCode.ID_NOT_FOUND);

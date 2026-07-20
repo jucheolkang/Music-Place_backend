@@ -57,3 +57,15 @@ export default function () {
 
     sleep(2);
 }
+
+export function handleSummary(data) {
+
+    const now = new Date()
+        .toISOString()
+        .replace(/:/g, '-');
+
+    return {
+        [`/results/warmup-${now}.json`]:
+            JSON.stringify(data, null, 2),
+    };
+}

@@ -39,3 +39,5 @@ out/
 ### docker compose password ###
 .env
 /db
+/logs
+/load-test

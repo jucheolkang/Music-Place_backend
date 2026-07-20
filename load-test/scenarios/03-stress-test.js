@@ -54,3 +54,22 @@ export default function () {
 
     sleep(1);
 }
+
+export function handleSummary(data) {
+
+    const now = new Date()
+        .toISOString()
+        .replace(/:/g, '-');
+
+    console.log("\n========== Stress Test Summary ==========");
+    console.log(`Total Requests : ${data.metrics.http_reqs.values.count}`);
+    console.log(`Failures       : ${(data.metrics.http_req_failed.values.rate * 100).toFixed(2)}%`);
+    console.log(`Average        : ${data.metrics.http_req_duration.values.avg.toFixed(2)} ms`);
+    console.log(`P95            : ${data.metrics.http_req_duration.values["p(95)"].toFixed(2)} ms`);
+    console.log("=========================================\n");
+
+    return {
+        [`/results/stress-test-${now}.json`]:
+            JSON.stringify(data, null, 2),
+    };
+}
