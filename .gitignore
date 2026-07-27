@@ -40,4 +40,4 @@ out/
 .env
 /db
 /logs
-/load-test
+/load-test/results
