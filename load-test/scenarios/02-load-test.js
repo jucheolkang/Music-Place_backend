@@ -160,15 +160,24 @@ export function browsingScenario() {
         if (plSuccess && publicPL.status === 200) {
             try {
                 const playlists = publicPL.json();
-                if (playlists && playlists.length > 0) {
-                    const plId = playlists[0].playlist_id;
 
-                    const music = http.get(`${BASE_URL}/playList/music/${plId}`, { headers, tags: { name: 'GetMusic' } });
+                if (playlists && playlists.length > 0) {
+                    const plId = playlists[0].playlistId;
+
+                    const music = http.get(
+                        `${BASE_URL}/playList/music/${plId}`,
+                        { headers, tags: { name: 'GetMusic' } }
+                    );
+
                     checkResponse(music, 'Music List');
                     dbOperations.add(1);
                     sleep(2);
 
-                    const comments = http.get(`${BASE_URL}/playList/comment/${plId}`, { headers, tags: { name: 'GetComments' } });
+                    const comments = http.get(
+                        `${BASE_URL}/playList/comment/${plId}`,
+                        { headers, tags: { name: 'GetComments' } }
+                    );
+
                     checkResponse(comments, 'Comments');
                     dbOperations.add(1);
                     sleep(1);
@@ -258,8 +267,9 @@ export function writingScenario() {
         if (publicPL.status === 200) {
             try {
                 const playlists = publicPL.json();
+
                 if (playlists && playlists.length > 0) {
-                    const plId = playlists[0].playlist_id;
+                    const plId = playlists[0].playlistId;
 
                     const commentData = JSON.stringify({
                         nickName: user.member_id,
@@ -267,7 +277,12 @@ export function writingScenario() {
                         profile_img_url: 'https://via.placeholder.com/50',
                     });
 
-                    const comment = http.post(`${BASE_URL}/playList/comment/${plId}`, commentData, { headers, tags: { name: 'CreateComment' } });
+                    const comment = http.post(
+                        `${BASE_URL}/playList/comment/${plId}`,
+                        commentData,
+                        { headers, tags: { name: 'CreateComment' } }
+                    );
+
                     checkResponse(comment, 'Create Comment');
                     dbOperations.add(1);
                 }

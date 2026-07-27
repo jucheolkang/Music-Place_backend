@@ -13,14 +13,14 @@ public class PLUpdateDto {
 
     private OnOff onOff;
 
-    private String cover_img;
+    private String coverImg;
 
     private String comment;
 
     @Builder
-    public PLUpdateDto(String title, OnOff onOff, String cover_img, String comment){
+    public PLUpdateDto(String title, OnOff onOff, String coverImg, String comment){
         this.onOff = onOff;
         this.comment = comment;
-        this.cover_img = cover_img;
+        this.coverImg = coverImg;
     }
 }

@@ -34,3 +34,5 @@ docker-compose-test.yml
 # Documentation
 README.md
 docs/
+
+.env

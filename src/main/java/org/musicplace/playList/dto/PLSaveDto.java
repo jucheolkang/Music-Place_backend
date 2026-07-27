@@ -15,16 +15,16 @@ public class PLSaveDto {
 
     private OnOff onOff;
 
-    private String cover_img;
+    private String coverImg;
 
     private String comment;
 
     @Builder
-    public PLSaveDto(String title, OnOff onOff, String cover_img, String comment) {
+    public PLSaveDto(String title, OnOff onOff, String coverImg, String comment) {
         this.title = title;
         this.onOff = onOff;
         this.comment = comment;
-        this.cover_img = cover_img;
+        this.coverImg = coverImg;
     }
 
 }

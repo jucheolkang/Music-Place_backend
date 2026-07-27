@@ -1,37 +1,42 @@
 package org.musicplace.playList.dto;
 
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.musicplace.playList.domain.OnOff;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class ResponsePLDto {
 
-    private Long playlist_id;
+    private Long playlistId;
 
     private String nickname;
 
-    private String PLTitle;
+    private String plTitle;
 
-    private String cover_img;
+    private String coverImg;
 
     private OnOff onOff;
 
     private String comment;
 
-    private String member_id;
+    private String memberId;
 
-    @Builder
-    public ResponsePLDto(Long playlist_id, String PLTitle, String nickname,String cover_img, OnOff onOff, String comment, String member_id) {
-        this.playlist_id = playlist_id;
+    public ResponsePLDto(
+            Long playlistId,
+            String plTitle,
+            String nickname,
+            String coverImg,
+            OnOff onOff,
+            String comment,
+            String memberId
+    ) {
+        this.playlistId = playlistId;
+        this.plTitle = plTitle;
         this.nickname = nickname;
-        this.PLTitle = PLTitle;
-        this.cover_img = cover_img;
+        this.coverImg = coverImg;
         this.onOff = onOff;
         this.comment = comment;
-        this.member_id = member_id;
+        this.memberId = memberId;
     }
 }
