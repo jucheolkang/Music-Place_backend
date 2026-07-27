@@ -3,8 +3,11 @@
 
     <property name="LOG_PATH" value="logs"/>
 
+    <!-- ========================= -->
     <!-- Console -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <!-- ========================= -->
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
                 %d{yyyy-MM-dd HH:mm:ss.SSS}
@@ -19,7 +22,10 @@
         </encoder>
     </appender>
 
-    <!-- Rolling JSON File -->
+
+    <!-- ========================= -->
+    <!-- 전체 로그(JSON) -->
+    <!-- ========================= -->
     <appender name="JSON_FILE"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
 
@@ -33,9 +39,7 @@
             </fileNamePattern>
 
             <maxFileSize>100MB</maxFileSize>
-
             <maxHistory>14</maxHistory>
-
             <totalSizeCap>5GB</totalSizeCap>
 
         </rollingPolicy>
@@ -45,34 +49,15 @@
 
             <providers>
 
-                <!-- Timestamp -->
-                <timestamp>
-                    <fieldName>timestamp</fieldName>
-                </timestamp>
-
-                <!-- Level -->
-                <logLevel>
-                    <fieldName>level</fieldName>
-                </logLevel>
-
-                <!-- Thread -->
+                <timestamp fieldName="timestamp"/>
+                <logLevel fieldName="level"/>
                 <threadName/>
-
-                <!-- Logger -->
                 <loggerName/>
-
-                <!-- Message -->
                 <message/>
-
-                <!-- MDC -->
                 <mdc/>
 
-                <!-- StackTrace -->
-                <stackTrace>
-                    <fieldName>stackTrace</fieldName>
-                </stackTrace>
+                <stackTrace fieldName="stackTrace"/>
 
-                <!-- Context -->
                 <context/>
 
             </providers>
@@ -81,25 +66,78 @@
 
     </appender>
 
+
+    <!-- ========================= -->
+    <!-- ERROR 전용 로그 -->
+    <!-- ========================= -->
+    <appender name="ERROR_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+        <file>${LOG_PATH}/error.log</file>
+
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+
+            <fileNamePattern>
+                ${LOG_PATH}/error/error.%d{yyyy-MM-dd}.%i.log
+            </fileNamePattern>
+
+            <maxFileSize>100MB</maxFileSize>
+
+            <maxHistory>30</maxHistory>
+
+            <totalSizeCap>5GB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <!-- ERROR 이상만 기록 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+
+        <encoder
+                class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+
+            <providers>
+
+                <timestamp fieldName="timestamp"/>
+
+                <logLevel fieldName="level"/>
+
+                <threadName/>
+
+                <loggerName/>
+
+                <message/>
+
+                <mdc/>
+
+                <stackTrace fieldName="stackTrace"/>
+
+                <context/>
+
+            </providers>
+
+        </encoder>
+
+    </appender>
+
+
     <!-- Hibernate SQL -->
-    <logger name="org.hibernate.SQL"
-            level="DEBUG"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
 
     <!-- Bind Parameter -->
-    <logger name="org.hibernate.orm.jdbc.bind"
-            level="TRACE"/>
+    <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/>
 
     <!-- Hikari -->
-    <logger name="com.zaxxer.hikari"
-            level="INFO"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
 
     <!-- Spring JDBC -->
-    <logger name="org.springframework.jdbc"
-            level="INFO"/>
+    <logger name="org.springframework.jdbc" level="INFO"/>
 
     <!-- Redis -->
-    <logger name="io.lettuce"
-            level="INFO"/>
+    <logger name="io.lettuce" level="INFO"/>
+
 
     <!-- Root -->
     <root level="INFO">
@@ -107,6 +145,8 @@
         <appender-ref ref="CONSOLE"/>
 
         <appender-ref ref="JSON_FILE"/>
+
+        <appender-ref ref="ERROR_FILE"/>
 
     </root>
 
