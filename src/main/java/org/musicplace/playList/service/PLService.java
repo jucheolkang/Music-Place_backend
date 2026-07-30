@@ -37,7 +37,7 @@ public class PLService {
                 .title(dto.getTitle())
                 .onOff(dto.getOnOff())
                 .comment(dto.getComment())
-                .coverImg(dto.getCover_img())
+                .coverImg(dto.getCoverImg())
                 .nickname(user.getNickname())
                 .build();
 
@@ -52,7 +52,7 @@ public class PLService {
         pl.plUpdate(
                 dto.getTitle(),
                 dto.getOnOff(),
-                dto.getCover_img(),
+                dto.getCoverImg(),
                 dto.getComment()
         );
     }

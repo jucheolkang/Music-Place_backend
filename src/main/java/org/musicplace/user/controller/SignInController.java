@@ -15,17 +15,17 @@ public class SignInController {
 
     @PostMapping("/save")
     public void SignInSave(@RequestBody SignInSaveDto signInSaveDto) {
-        signInService.SignInSave(signInSaveDto);
+        signInService.save(signInSaveDto);
     }
 
     @PatchMapping("/update")
     public void SignInUpdate(@RequestBody SignInUpdateDto signInUpdateDto) {
-        signInService.SignInUpdate(signInUpdateDto);
+        signInService.update(signInUpdateDto);
     }
 
     @DeleteMapping("/delete")
     public void SignInDelete() {
-        signInService.SignInDelete();
+        signInService.delete();
     }
 
     @GetMapping("/{member_id}/{email}/pw")

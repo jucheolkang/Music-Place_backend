@@ -23,7 +23,7 @@ public class SignInService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void SignInSave(SignInSaveDto signInSaveDto) {
+    public void save(SignInSaveDto signInSaveDto) {
         userRepository.save(UserEntity.builder()
                 .memberId(signInSaveDto.getMember_id())
                 .pw(passwordEncoder.encode(signInSaveDto.getPw()))
@@ -36,9 +36,9 @@ public class SignInService {
     }
 
     @Transactional
-    public void SignInUpdate(SignInUpdateDto signInUpdateDto) {
+    public void update(SignInUpdateDto signInUpdateDto) {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = SignInFindById(member_id);
+        UserEntity userEntity = findById(member_id);
         CheckSignInDelete(userEntity);
         userEntity.updateProfile(
                 signInUpdateDto.getName(),
@@ -48,16 +48,16 @@ public class SignInService {
     }
 
     @Transactional
-    public void SignInDelete() {
+    public void delete() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = SignInFindById(member_id);
+        UserEntity userEntity = findById(member_id);
         CheckSignInDelete(userEntity);
         userEntity.deleteAccount();
     }
 
     public SignInGetUserDataDto SignInGetUserData() {
         String member_id = MemberAuthorizationUtil.getLoginMemberId();
-        UserEntity userEntity = SignInFindById(member_id);
+        UserEntity userEntity = findById(member_id);
         CheckSignInDelete(userEntity);
         return SignInGetUserDataDto.builder()
                 .email(userEntity.getEmail())
@@ -69,19 +69,13 @@ public class SignInService {
 
 
 
-    public UserEntity SignInFindById(String member_id) {
+    public UserEntity findById(String member_id) {
         return userRepository.findById(member_id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
     }
 
-    public Boolean SignInCheckSameId(String member_id) {
-        List<UserEntity> userEntityList = userRepository.findAll();
-        for (UserEntity getListUser : userEntityList) {
-            if(getListUser.getMemberId().equals(member_id)) {
-                return false;
-            }
-        }
-        return true;
+    public boolean SignInCheckSameId(String memberId) {
+        return !userRepository.existsByMemberId(memberId);
     }
 
     public void CheckSignInDelete(UserEntity userEntity) {
@@ -90,38 +84,44 @@ public class SignInService {
         }
     }
 
-    public String ForgetPw(String member_id, String email) {
-        UserEntity userEntity = userRepository.findById(member_id)
+    public String ForgetPw(String memberId, String email) {
+
+        UserEntity user = userRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
-        if(userEntity.getEmail().equals(email)) {
-            return userEntity.getPw();
+
+        if (!user.getEmail().equals(email)) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_FOUND);
         }
-        return ErrorCode.EMAIL_NOT_FOUND.toString();
+
+        return user.getPw();
     }
 
     public String ForgetId(String pw, String email) {
-        List<UserEntity> userEntityList = userRepository.findAll();
-        String result = null;
-        for(UserEntity n : userEntityList) {
-            if(n.getPw().equals(pw) && n.getEmail().equals(email)) {
-                result = n.getMemberId();
-            }
+
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(ErrorCode.EMAIL_NOT_FOUND));
+
+        if (!passwordEncoder.matches(pw, user.getPw())) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
-        return result;
+
+        return user.getMemberId();
     }
 
 
 
-    public CustomUserDetails authenticate(String id, String password) {
-        UserEntity user = userRepository.findById(id)
+    public CustomUserDetails authenticate(String memberId, String password) {
+
+        UserEntity user = userRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
-        if (user.getDeleteAccount()) {
-            throw new BusinessException(ErrorCode.MEMBER_DELETED);
+
+        CheckSignInDelete(user);
+
+        if (!passwordEncoder.matches(password, user.getPw())) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
         }
-        if (passwordEncoder.matches(password, user.getPw())) {
-            return new CustomUserDetails(user);
-        }
-        throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+
+        return new CustomUserDetails(user);
     }
 
 

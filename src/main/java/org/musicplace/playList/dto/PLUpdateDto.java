@@ -19,6 +19,7 @@ public class PLUpdateDto {
 
     @Builder
     public PLUpdateDto(String title, OnOff onOff, String coverImg, String comment){
+        this.title = title;
         this.onOff = onOff;
         this.comment = comment;
         this.coverImg = coverImg;

@@ -26,7 +26,7 @@ public class FollowService {
     public Long followSave(FollowSaveDto dto) {
         String memberId = MemberAuthorizationUtil.getLoginMemberId();
 
-        UserEntity user = signInService.SignInFindById(memberId);
+        UserEntity user = signInService.findById(memberId);
         signInService.CheckSignInDelete(user);
 
         if (memberId.equals(dto.getTarget_id())) {
