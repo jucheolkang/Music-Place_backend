@@ -40,4 +40,6 @@ out/
 .env
 /db
 /logs/
+/logs/application.log
+/logs/error.log
 /load-test/results
