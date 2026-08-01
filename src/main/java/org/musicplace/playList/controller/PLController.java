@@ -1,12 +1,11 @@
 package org.musicplace.playList.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.musicplace.global.security.config.CustomUserDetails;
 import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.service.PLService;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,48 +21,50 @@ import java.util.List;
 @RequestMapping("/playList")
 @RequiredArgsConstructor
 public class PLController {
-    private final PLService PLService;
 
-    @PostMapping()
-    public Long plsave(@AuthenticationPrincipal CustomUserDetails customUserDetails, @RequestBody PLSaveDto plSaveDto) {
-        return PLService.plSave(customUserDetails.getUsername(), plSaveDto);
+    private final PLService plService;
+
+    @PostMapping
+    public Long plsave(Authentication authentication,
+                       @RequestBody PLSaveDto plSaveDto) {
+
+        return plService.plSave(authentication.getName(), plSaveDto);
     }
 
     @PatchMapping("/{pl_id}")
-    public void plupdate(@PathVariable Long pl_id, @RequestBody PLUpdateDto plUpdateDto) {
-        PLService.plUpdate(pl_id, plUpdateDto);
+    public void plupdate(@PathVariable Long pl_id,
+                         @RequestBody PLUpdateDto plUpdateDto) {
+        plService.plUpdate(pl_id, plUpdateDto);
     }
 
     @DeleteMapping("/{pl_id}")
     public void pldelete(@PathVariable Long pl_id) {
-        PLService.plDelete(pl_id);
+        plService.plDelete(pl_id);
     }
 
-    @GetMapping()
-    public List<ResponsePLDto> plfindall(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        List<ResponsePLDto> PlayListAll = PLService.findMyPlaylists(customUserDetails.getUsername());
-        return PlayListAll;
+    @GetMapping
+    public List<ResponsePLDto> plfindall(Authentication authentication) {
+        return plService.findMyPlaylists(authentication.getName());
     }
 
     @GetMapping("/public")
-    public List<ResponsePLDto> PLFindPublic(){
-        List<ResponsePLDto> PublicPlayList = PLService.findPublicPlaylists();
-        return PublicPlayList;
+    public List<ResponsePLDto> PLFindPublic() {
+        return plService.findPublicPlaylists();
     }
 
     @GetMapping("/count")
-    public Long PLCount(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
-        return PLService.countMyPlaylists(customUserDetails.getUsername());
+    public Long PLCount(Authentication authentication) {
+        return plService.countMyPlaylists(authentication.getName());
     }
 
     @GetMapping("/otherCount/{otherMemberId}")
     public Long otherPLCount(@PathVariable String otherMemberId) {
-        return PLService.countOtherPublicPlaylists(otherMemberId);
+        return plService.countOtherPublicPlaylists(otherMemberId);
     }
 
     @GetMapping("/other/{otherMemberId}")
     public List<ResponsePLDto> getOtherUserPL(@PathVariable String otherMemberId) {
-        return PLService.getOtherUserPublicPlaylists(otherMemberId);
+        return plService.getOtherUserPublicPlaylists(otherMemberId);
     }
 
 }

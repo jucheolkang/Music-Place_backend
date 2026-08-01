@@ -90,6 +90,24 @@ public enum ErrorCode {
             HttpStatus.NOT_FOUND,
             "COMMON_001",
             "조회 결과가 존재하지 않습니다."
+    ),
+
+    /**
+     * ===========================
+     * Playlist
+     * ===========================
+     */
+
+    PLAYLIST_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+        "PLAYLIST_001",
+                "해당 플레이리스트를 찾을 수 없습니다."
+    ),
+
+    PLAYLIST_DELETED(
+            HttpStatus.GONE,
+        "PLAYLIST_002",
+                "삭제된 플레이리스트입니다."
     );
 
     /**
