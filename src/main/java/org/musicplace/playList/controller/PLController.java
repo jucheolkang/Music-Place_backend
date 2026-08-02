@@ -1,11 +1,11 @@
 package org.musicplace.playList.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.musicplace.global.security.CurrentUserProvider;
 import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.service.PLService;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,11 +24,15 @@ public class PLController {
 
     private final PLService plService;
 
-    @PostMapping
-    public Long plsave(Authentication authentication,
-                       @RequestBody PLSaveDto plSaveDto) {
+    private final CurrentUserProvider currentUserProvider;
 
-        return plService.plSave(authentication.getName(), plSaveDto);
+    @PostMapping
+    public Long save(@RequestBody PLSaveDto dto) {
+
+        return plService.plSave(
+                currentUserProvider.getMemberId(),
+                dto
+        );
     }
 
     @PatchMapping("/{pl_id}")
@@ -43,8 +47,11 @@ public class PLController {
     }
 
     @GetMapping
-    public List<ResponsePLDto> plfindall(Authentication authentication) {
-        return plService.findMyPlaylists(authentication.getName());
+    public List<ResponsePLDto> plfindall() {
+
+        return plService.findMyPlaylists(
+                currentUserProvider.getMemberId()
+        );
     }
 
     @GetMapping("/public")
@@ -53,8 +60,11 @@ public class PLController {
     }
 
     @GetMapping("/count")
-    public Long PLCount(Authentication authentication) {
-        return plService.countMyPlaylists(authentication.getName());
+    public Long count() {
+
+        return plService.countMyPlaylists(
+                currentUserProvider.getMemberId()
+        );
     }
 
     @GetMapping("/otherCount/{otherMemberId}")
