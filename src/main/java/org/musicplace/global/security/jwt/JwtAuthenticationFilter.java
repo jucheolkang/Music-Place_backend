@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.musicplace.global.security.config.CustomUserDetails;
 import org.musicplace.global.security.service.CustomUserDetailsService;
 import org.musicplace.user.domain.UserEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,17 +39,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (memberId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserEntity userDetails = userDetailsService.loadUserByUsername(memberId);
+                UserEntity user = userDetailsService.loadUserByUsername(memberId);
 
-                if (jwtTokenUtil.validateToken(jwt, userDetails.getMemberId())) {
-                    CustomUserDetails customUserDetails = new CustomUserDetails(userDetails);
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            customUserDetails, null, customUserDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    logger.warn("Invalid JWT token for user: " + memberId);
-                }
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                user.getAuthorities()
+                        );
+
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
         } catch (ExpiredJwtException e) {
             logger.warn("Expired JWT token", e);

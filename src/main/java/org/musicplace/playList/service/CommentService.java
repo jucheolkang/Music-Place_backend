@@ -52,10 +52,10 @@ public class CommentService {
 
         CommentEntity comment = commentRepository
                 .findByCommentIdAndPlaylistId(commentId, playlistId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND)); // COMMENT_NOT_FOUND로 교체 시 여기
 
         if (comment.isCommentDelete()) {
-            throw new BusinessException(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.COMMENT_DELETED); // MEMBER_DELETED → COMMENT_DELETED
         }
 
         comment.delete();
@@ -78,7 +78,7 @@ public class CommentService {
                 .stream()
                 .map(c -> ResponseCommentDto.builder()
                         .memberId(c.getMemberId())
-                        .nickName(user.getNickname())
+                        .nickName(c.getNickname())
                         .userComment(c.getUserComment())
                         .profile_img_url(c.getProfileImgUrl())
                         .build())

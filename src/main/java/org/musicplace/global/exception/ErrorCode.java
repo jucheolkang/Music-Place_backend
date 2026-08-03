@@ -80,6 +80,12 @@ public enum ErrorCode {
             "이미 등록된 음악입니다."
     ),
 
+    MUSIC_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "MUSIC_002",
+            "해당 음악을 찾을 수 없습니다."
+    ),
+
     /**
      * ===========================
      * Common
@@ -108,6 +114,23 @@ public enum ErrorCode {
             HttpStatus.GONE,
         "PLAYLIST_002",
                 "삭제된 플레이리스트입니다."
+    ),
+    /**
+     * ===========================
+     * Comment
+     * ===========================
+     */
+
+    COMMENT_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "COMMENT_001",
+            "해당 댓글을 찾을 수 없습니다."
+    ),
+
+    COMMENT_DELETED(
+            HttpStatus.GONE,
+            "COMMENT_002",
+            "삭제된 댓글입니다."
     );
 
     /**

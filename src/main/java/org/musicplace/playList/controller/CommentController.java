@@ -1,10 +1,10 @@
 package org.musicplace.playList.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.musicplace.global.security.config.CustomUserDetails;
 import org.musicplace.playList.dto.ResponseCommentDto;
 import org.musicplace.playList.service.CommentService;
 import org.musicplace.playList.dto.CommentSaveDto;
+import org.musicplace.user.domain.UserEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +24,8 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping("/{PLId}")
-    public Long commentSave(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long PLId, @RequestBody CommentSaveDto commentSaveDto) {
-        return commentService.commentSave(customUserDetails.getUsername(), PLId,commentSaveDto);
+    public Long commentSave(@AuthenticationPrincipal UserEntity loginUser, @PathVariable Long PLId, @RequestBody CommentSaveDto commentSaveDto) {
+        return commentService.commentSave(loginUser.getMemberId(), PLId,commentSaveDto);
     }
 
     @DeleteMapping("/{PLId}/{CommentId}")
@@ -34,8 +34,8 @@ public class CommentController {
     }
 
     @GetMapping("/{PLId}")
-    public List<ResponseCommentDto> commentFindAll(@AuthenticationPrincipal CustomUserDetails customUserDetails, @PathVariable Long PLId){
-        List<ResponseCommentDto> AllComment = commentService.commentFindAll(customUserDetails.getUsername(), PLId);
+    public List<ResponseCommentDto> commentFindAll(@AuthenticationPrincipal UserEntity loginUser, @PathVariable Long PLId){
+        List<ResponseCommentDto> AllComment = commentService.commentFindAll(loginUser.getMemberId(), PLId);
         return AllComment;
     }
 }

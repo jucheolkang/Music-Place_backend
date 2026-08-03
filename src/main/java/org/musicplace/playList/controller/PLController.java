@@ -1,11 +1,12 @@
 package org.musicplace.playList.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.musicplace.global.security.CurrentUserProvider;
 import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.service.PLService;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
+import org.musicplace.user.domain.UserEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,13 +25,13 @@ public class PLController {
 
     private final PLService plService;
 
-    private final CurrentUserProvider currentUserProvider;
-
     @PostMapping
-    public Long save(@RequestBody PLSaveDto dto) {
-
+    public Long save(
+            @AuthenticationPrincipal UserEntity loginUser,
+            @RequestBody PLSaveDto dto
+    ){
         return plService.plSave(
-                currentUserProvider.getMemberId(),
+                loginUser.getMemberId(),
                 dto
         );
     }
@@ -47,11 +48,10 @@ public class PLController {
     }
 
     @GetMapping
-    public List<ResponsePLDto> plfindall() {
-
-        return plService.findMyPlaylists(
-                currentUserProvider.getMemberId()
-        );
+    public List<ResponsePLDto> plfindall(
+            @AuthenticationPrincipal UserEntity loginUser
+    ) {
+        return plService.findMyPlaylists(loginUser.getMemberId());
     }
 
     @GetMapping("/public")
@@ -60,11 +60,10 @@ public class PLController {
     }
 
     @GetMapping("/count")
-    public Long count() {
-
-        return plService.countMyPlaylists(
-                currentUserProvider.getMemberId()
-        );
+    public Long count(
+            @AuthenticationPrincipal UserEntity loginUser
+    ){
+        return plService.countMyPlaylists(loginUser.getMemberId());
     }
 
     @GetMapping("/otherCount/{otherMemberId}")

@@ -1,75 +1,131 @@
 package org.musicplace.user.repository;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.musicplace.common.config.BaseRepositoryTest;
-import org.musicplace.common.fixture.UserFixture;
+import org.musicplace.user.domain.Gender;
 import org.musicplace.user.domain.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
 
-    @Test
-    @DisplayName("회원 ID로 회원을 조회한다")
-    void findByMemberId() {
-        // given
-        UserEntity user = UserFixture.createUser();
-        userRepository.save(user);
+    @Autowired
+    private TestEntityManager em;
 
-        // when
-        Optional<UserEntity> result = userRepository.findByMemberId("test-user");
+    private UserEntity persistUser(String memberId, String email) {
+        UserEntity user = UserEntity.builder()
+                .memberId(memberId)
+                .pw("encodedPw")
+                .gender(Gender.male)
+                .email(email)
+                .nickname("nick_" + memberId)
+                .name("홍길동")
+                .role("ROLE_USER")
+                .build();
 
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getMemberId()).isEqualTo("test-user");
-        assertThat(result.get().getEmail()).isEqualTo("test@test.com");
-        assertThat(result.get().getNickname()).isEqualTo("tester");
+        em.persist(user);
+        return user;
     }
 
-    @Test
-    @DisplayName("존재하지 않는 회원 ID 조회 시 빈 Optional을 반환한다")
-    void findByMemberId_ReturnEmptyOptional_WhenMemberDoesNotExist() {
-        // when
-        Optional<UserEntity> result = userRepository.findByMemberId("not-found");
+    @Nested
+    @DisplayName("findByMemberId")
+    class FindByMemberIdTest {
 
-        // then
-        assertThat(result).isEmpty();
+        @Test
+        @DisplayName("존재하는 memberId면 UserEntity를 반환한다")
+        void found() {
+            persistUser("tester01", "tester01@test.com");
+            em.flush();
+            em.clear();
+
+            Optional<UserEntity> result = userRepository.findByMemberId("tester01");
+
+            assertThat(result).isPresent();
+            assertThat(result.get().getMemberId()).isEqualTo("tester01");
+            assertThat(result.get().getEmail()).isEqualTo("tester01@test.com");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 memberId면 빈 Optional을 반환한다")
+        void notFound() {
+            Optional<UserEntity> result = userRepository.findByMemberId("noone");
+
+            assertThat(result).isEmpty();
+        }
     }
 
-    @Test
-    @DisplayName("기본 PK로 회원을 조회한다")
-    void findById() {
-        // given
-        UserEntity user = UserFixture.createUser();
-        userRepository.save(user);
+    @Nested
+    @DisplayName("existsByMemberId")
+    class ExistsByMemberIdTest {
 
-        // when
-        Optional<UserEntity> result = userRepository.findById("test-user");
+        @Test
+        @DisplayName("존재하는 memberId면 true를 반환한다")
+        void exists() {
+            persistUser("tester01", "tester01@test.com");
+            em.flush();
+            em.clear();
 
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getMemberId()).isEqualTo("test-user");
+            boolean result = userRepository.existsByMemberId("tester01");
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 memberId면 false를 반환한다")
+        void notExists() {
+            boolean result = userRepository.existsByMemberId("noone");
+
+            assertThat(result).isFalse();
+        }
     }
 
-    @Test
-    @DisplayName("동일한 memberId를 가진 회원은 하나만 조회된다")
-    void findByMemberId_ReturnSingleUser() {
-        // given
-        UserEntity user = UserFixture.createUser();
-        userRepository.save(user);
+    @Nested
+    @DisplayName("findByEmail")
+    class FindByEmailTest {
 
-        // when
-        Optional<UserEntity> result = userRepository.findByMemberId("test-user");
+        @Test
+        @DisplayName("존재하는 email이면 UserEntity를 반환한다")
+        void found() {
+            persistUser("tester01", "tester01@test.com");
+            em.flush();
+            em.clear();
 
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getMemberId()).isEqualTo("test-user");
+            Optional<UserEntity> result = userRepository.findByEmail("tester01@test.com");
+
+            assertThat(result).isPresent();
+            assertThat(result.get().getMemberId()).isEqualTo("tester01");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 email이면 빈 Optional을 반환한다")
+        void notFound() {
+            Optional<UserEntity> result = userRepository.findByEmail("none@test.com");
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("대소문자가 다른 email로는 조회되지 않는다")
+        void caseSensitive() {
+            persistUser("tester01", "tester01@test.com");
+            em.flush();
+            em.clear();
+
+            Optional<UserEntity> result = userRepository.findByEmail("TESTER01@TEST.COM");
+
+            assertThat(result).isEmpty();
+        }
     }
 }
