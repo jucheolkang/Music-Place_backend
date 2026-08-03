@@ -3,12 +3,11 @@ package org.musicplace.follow.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.musicplace.follow.domain.FollowEntity;
-import org.musicplace.follow.dto.FollowSaveDto;
 import org.musicplace.follow.dto.FollowResponseDto;
+import org.musicplace.follow.dto.FollowSaveDto;
 import org.musicplace.follow.repository.FollowRepository;
-import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.global.exception.BusinessException;
-import org.musicplace.global.security.authorizaion.MemberAuthorizationUtil;
+import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.service.SignInService;
 import org.springframework.stereotype.Service;
@@ -23,18 +22,19 @@ public class FollowService {
     private final SignInService signInService;
 
     @Transactional
-    public Long followSave(FollowSaveDto dto) {
-        String memberId = MemberAuthorizationUtil.getLoginMemberId();
+    public Long followSave(String memberId, FollowSaveDto dto) {
 
-        UserEntity user = signInService.SignInFindById(memberId);
-        signInService.CheckSignInDelete(user);
+        UserEntity user = signInService.findById(memberId);
+        signInService.checkSignInDelete(user);
 
         if (memberId.equals(dto.getTarget_id())) {
             throw new BusinessException(ErrorCode.CANNOT_FOLLOW_SELF);
         }
 
-        // 🔥 중복 팔로우 방지 (DB + 조회)
-        if (followRepository.existsByMemberIdAndTargetId(memberId, dto.getTarget_id())) {
+        if (followRepository.existsByMemberIdAndTargetId(
+                memberId,
+                dto.getTarget_id())) {
+
             throw new BusinessException(ErrorCode.CANNOT_FOLLOW_SELF);
         }
 
@@ -46,15 +46,16 @@ public class FollowService {
                 .build();
 
         followRepository.save(follow);
+
         return follow.getFollowId();
     }
 
     @Transactional
-    public void followDelete(Long followId) {
-        String memberId = MemberAuthorizationUtil.getLoginMemberId();
+    public void followDelete(String memberId, Long followId) {
 
         FollowEntity follow = followRepository.findById(followId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FOLLOW_NOT_FOUND));
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.FOLLOW_NOT_FOUND));
 
         if (!follow.getMemberId().equals(memberId)) {
             throw new BusinessException(ErrorCode.FOLLOW_NOT_FOUND);
@@ -63,8 +64,7 @@ public class FollowService {
         followRepository.delete(follow);
     }
 
-    public List<FollowResponseDto> followFindAll() {
-        String memberId = MemberAuthorizationUtil.getLoginMemberId();
+    public List<FollowResponseDto> followFindAll(String memberId) {
 
         return followRepository.findAllByMemberId(memberId)
                 .stream()
@@ -77,8 +77,7 @@ public class FollowService {
                 .toList();
     }
 
-    public long followCount() {
-        String memberId = MemberAuthorizationUtil.getLoginMemberId();
+    public long followCount(String memberId) {
         return followRepository.countByMemberId(memberId);
     }
 

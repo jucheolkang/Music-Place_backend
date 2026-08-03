@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:musicplace
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+    show-sql: true
+
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  sql:
+    init:
+      mode: never
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+
+JWT_SECRET: test-secret-key
+JWT_ACCESS_TIME: 3600000

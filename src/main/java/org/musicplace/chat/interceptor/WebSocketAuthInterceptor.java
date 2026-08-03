@@ -33,7 +33,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                 String userId = jwtTokenProvider.getUsernameFromToken(token);
 
                 // SignInEntity에서 nickname을 가져와 세션에 저장
-                UserEntity user = signInService.SignInFindById(userId);  // 사용자 ID로 사용자 엔티티 검색
+                UserEntity user = signInService.findById(userId);  // 사용자 ID로 사용자 엔티티 검색
                 attributes.put("username", user.getNickname());  // nickname 저장
                 return true;
             }

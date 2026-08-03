@@ -37,7 +37,7 @@ public class PLService {
                 .title(dto.getTitle())
                 .onOff(dto.getOnOff())
                 .comment(dto.getComment())
-                .coverImg(dto.getCover_img())
+                .coverImg(dto.getCoverImg())
                 .nickname(user.getNickname())
                 .build();
 
@@ -52,7 +52,7 @@ public class PLService {
         pl.plUpdate(
                 dto.getTitle(),
                 dto.getOnOff(),
-                dto.getCover_img(),
+                dto.getCoverImg(),
                 dto.getComment()
         );
     }
@@ -90,16 +90,16 @@ public class PLService {
                 plRepository.existsByPlaylistIdAndDeleteStateFalse(playlistId);
 
         if (!exists) {
-            throw new BusinessException(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.PLAYLIST_DELETED);
         }
     }
 
     private PLEntity findActivePlaylist(Long playlistId) {
         PLEntity pl = plRepository.findById(playlistId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PLAYLIST_NOT_FOUND));
 
         if (pl.isDeleteState()) {
-            throw new BusinessException(ErrorCode.MEMBER_DELETED);
+            throw new BusinessException(ErrorCode.PLAYLIST_DELETED);
         }
         return pl;
     }

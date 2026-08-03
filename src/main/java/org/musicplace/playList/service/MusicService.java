@@ -47,7 +47,7 @@ public class MusicService {
 
         for (MusicEntity music : musics) {
             if (music.isMusicDelete()) {
-                throw new BusinessException(ErrorCode.MEMBER_DELETED);
+                throw new BusinessException(ErrorCode.MUSIC_NOT_FOUND);
             }
             music.delete();
         }
