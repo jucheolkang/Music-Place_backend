@@ -1,0 +1,13 @@
+# musicplace-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: musicplace-config
+  namespace: musicplace
+data:
+  MYSQL_DATABASE: "musicplace"
+  MYSQL_CHARSET: "utf8mb4"
+  MYSQL_COLLATION: "utf8mb4_unicode_ci"
+  TZ: "Asia/Seoul"
+  SPRING_PROFILES_ACTIVE: "loadtest"
+  JWT_ACCESS_TIME: "3600000"
