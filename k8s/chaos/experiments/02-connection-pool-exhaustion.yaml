@@ -1,0 +1,36 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: musicplace-pool-exhaustion
+  namespace: musicplace
+spec:
+  appinfo:
+    appns: musicplace
+    applabel: app=mysql
+    appkind: statefulset
+  chaosServiceAccount: litmus-db-sa
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: TARGET_CONTAINER
+              value: 'mysql'
+            - name: NETWORK_LATENCY
+              value: '500'    # 500ms부터 시작, 안 터지면 1000/2000으로 올려가며 재실행
+            - name: TOTAL_CHAOS_DURATION
+              value: '60'
+        probe:
+          - name: "app-health-check"
+            type: "httpProbe"
+            mode: "Continuous"
+            httpProbe/inputs:
+              url: "http://musicplace-app-svc:8081/actuator/health"
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            runProperties:
+              probeTimeout: "5"
+              interval: "5"
+              retry: 3
