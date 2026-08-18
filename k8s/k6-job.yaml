@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-mysql-pod-delete-test
+  namespace: load-test
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:latest
+          args:
+            - run
+            - /scripts/script.js
+            - --out
+            - experimental-prometheus-rw
+          env:
+            - name: K6_PROMETHEUS_RW_SERVER_URL
+              value: "http://monitoring-kube-prometheus-prometheus.musicplace.svc.cluster.local:9090/api/v1/write"
+            - name: TARGET_BASE_URL
+              value: "http://musicplace-app-svc.musicplace.svc.cluster.local:8080"
+            - name: TARGET_MGMT_URL
+              value: "http://musicplace-app-svc.musicplace.svc.cluster.local:8081"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: k6-script
