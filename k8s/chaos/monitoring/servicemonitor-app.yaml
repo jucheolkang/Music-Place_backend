@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: musicplace-app
+  namespace: musicplace
+  labels:
+    release: monitoring       # Prometheus CR의 serviceMonitorSelector와 정확히 일치
+spec:
+  selector:
+    matchLabels:
+      app: musicplace-app     # Service의 selector 라벨과 동일
+  namespaceSelector:
+    matchNames:
+      - musicplace
+  endpoints:
+    - port: actuator           # Service에 정의된 포트 이름 (8081)
+      path: /actuator/prometheus
+      interval: 10s
+      scrapeTimeout: 5s
+      relabelings:
+        - targetLabel: instance
+          replacement: music-place-app
+        - targetLabel: environment
+          replacement: k8s-chaos-test
