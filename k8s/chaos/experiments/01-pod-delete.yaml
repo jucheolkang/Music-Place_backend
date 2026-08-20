@@ -1,7 +1,7 @@
 apiVersion: litmuschaos.io/v1alpha1
 kind: ChaosEngine
 metadata:
-  name: musicplace-db-chaos
+  name: musicplace-pod-delete
   namespace: musicplace
 spec:
   appinfo:
@@ -19,7 +19,7 @@ spec:
             - name: CHAOS_INTERVAL
               value: '10'
             - name: FORCE
-              value: 'false'
+              value: 'false'   # 먼저 graceful로 baseline 확인 → 이후 'true'로 crash recovery까지 검증 권장
         probe:
           - name: "app-health-check"
             type: "httpProbe"
@@ -31,6 +31,6 @@ spec:
                   criteria: "=="
                   responseCode: "200"
             runProperties:
-              probeTimeout: 5
-              interval: 5
+              probeTimeout: "5"
+              interval: "5"
               retry: 3
