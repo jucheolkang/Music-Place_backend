@@ -18,7 +18,7 @@ spec:
       serviceAccountName: mysql-sa
       initContainers:
         - name: init-config
-          image: mysql:8.0
+          image: bitnami/kubectl:1.30
           command: ["bash", "-c"]
           args:
             - |
