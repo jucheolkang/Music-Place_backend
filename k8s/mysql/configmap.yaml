@@ -1,0 +1,21 @@
+# k8s/mysql/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: musicplace
+data:
+  primary.cnf: |
+    [mysqld]
+    server-id=1
+    log-bin=mysql-bin
+    gtid_mode=ON
+    enforce-gtid-consistency=ON
+    log-slave-updates=ON
+  replica.cnf: |
+    [mysqld]
+    gtid_mode=ON
+    enforce-gtid-consistency=ON
+    log-slave-updates=ON
+    read_only=ON
+    super_read_only=ON
