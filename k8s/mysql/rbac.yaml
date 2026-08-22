@@ -1,3 +1,10 @@
+# k8s/mysql/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-sa
+  namespace: musicplace
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata: { name: mysql-pod-labeler, namespace: musicplace }
@@ -5,3 +12,17 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mysql-pod-labeler-binding
+  namespace: musicplace
+subjects:
+  - kind: ServiceAccount
+    name: mysql-sa
+    namespace: musicplace
+roleRef:
+  kind: Role
+  name: mysql-pod-labeler
+  apiGroup: rbac.authorization.k8s.io
