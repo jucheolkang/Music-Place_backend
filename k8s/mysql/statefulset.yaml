@@ -58,11 +58,11 @@ spec:
 
         - name: clone-data
           image: mysql:8.0
-          command: ["bash", "-c"]
+          command: [ "bash", "-c" ]
           args:
             - |
               set -ex
-              [[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
+              [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
               [[ $ordinal -eq 0 ]] && exit 0
               [[ -d /var/lib/mysql/mysql ]] && exit 0
@@ -70,6 +70,10 @@ spec:
                 --all-databases --single-transaction --source-data=2 \
                 > /mnt/clone/dump.sql
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: root-password }
@@ -82,8 +86,12 @@ spec:
       containers:
         - name: mysql
           image: mysql:8.0
-          command: ["bash", "/mnt/scripts/entrypoint.sh"]
+          command: [ "bash", "/mnt/scripts/entrypoint.sh" ]
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef: { name: mysql-secret, key: root-password }

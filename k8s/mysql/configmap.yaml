@@ -22,7 +22,7 @@ data:
   entrypoint.sh: |
     #!/bin/bash
     set -eo pipefail
-    [[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
+    [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
     ordinal=${BASH_REMATCH[1]}
 
     if [[ -d /var/lib/mysql/mysql ]]; then
