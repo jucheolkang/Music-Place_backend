@@ -33,16 +33,13 @@ data:
       exec docker-entrypoint.sh mysqld
     fi
 
-    docker-entrypoint.sh mysqld --skip-slave-start &
+    # 최초 초기화 시에만 read_only를 CLI 플래그로 강제 해제
+    docker-entrypoint.sh mysqld --skip-slave-start --read-only=0 --super-read-only=0 &
     pid=$!
     until mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done
 
     if [[ -s /tmp/clone/dump.sql ]]; then
-      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
-        "SET GLOBAL super_read_only=0; SET GLOBAL read_only=0;"
-
       mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < /tmp/clone/dump.sql
-
       mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
         CHANGE MASTER TO
           MASTER_HOST='mysql-0.mysql.musicplace.svc.cluster.local',
@@ -51,9 +48,6 @@ data:
           MASTER_AUTO_POSITION=1;
         START SLAVE;
     EOSQL
-
-      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
-        "SET GLOBAL super_read_only=1; SET GLOBAL read_only=1;"
     fi
 
     wait $pid
