@@ -19,11 +19,11 @@ spec:
       initContainers:
         - name: init-config
           image: bitnami/kubectl:1.30
-          command: ["bash", "-c"]
+          command: [ "bash", "-c" ]
           args:
             - |
               set -ex
-              [[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
+              [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
               echo "server-id=$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
               if [[ $ordinal -eq 0 ]]; then
@@ -33,9 +33,14 @@ spec:
               fi
               cp /mnt/config-map/entrypoint.sh /mnt/scripts/
               chmod +x /mnt/scripts/entrypoint.sh
-              kubectl label pod "$(hostname)" \
+              kubectl label pod "$POD_NAME" \
                 role=$([[ $ordinal -eq 0 ]] && echo primary || echo replica) \
                 --overwrite
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           volumeMounts:
             - name: conf
               mountPath: /mnt/conf.d
