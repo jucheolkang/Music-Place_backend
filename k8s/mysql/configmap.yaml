@@ -19,3 +19,34 @@ data:
     log-slave-updates=ON
     read_only=ON
     super_read_only=ON
+  entrypoint.sh: |
+    #!/bin/bash
+    set -eo pipefail
+    [[ $(hostname) =~ -([0-9]+)$ ]] || exit 1
+    ordinal=${BASH_REMATCH[1]}
+
+    if [[ -d /var/lib/mysql/mysql ]]; then
+      exec docker-entrypoint.sh mysqld
+    fi
+
+    if [[ $ordinal -eq 0 ]]; then
+      exec docker-entrypoint.sh mysqld
+    fi
+
+    docker-entrypoint.sh mysqld --skip-slave-start &
+    pid=$!
+    until mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done
+
+    if [[ -s /tmp/clone/dump.sql ]]; then
+      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < /tmp/clone/dump.sql
+      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+        CHANGE MASTER TO
+          MASTER_HOST='mysql-0.mysql.musicplace.svc.cluster.local',
+          MASTER_USER='repl',
+          MASTER_PASSWORD='${MYSQL_REPL_PASSWORD}',
+          MASTER_AUTO_POSITION=1;
+        START SLAVE;
+    EOSQL
+    fi
+
+    wait $pid
