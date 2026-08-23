@@ -18,24 +18,31 @@ spec:
       serviceAccountName: mysql-sa
       initContainers:
         - name: init-config
-          image: bitnami/kubectl:1.30
+          image: mysql:8.0
           command: [ "bash", "-c" ]
           args:
             - |
               set -ex
               [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
+
               echo "server-id=$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
               if [[ $ordinal -eq 0 ]]; then
                 cp /mnt/config-map/primary.cnf /mnt/conf.d/
+                ROLE=primary
               else
                 cp /mnt/config-map/replica.cnf /mnt/conf.d/
+                ROLE=replica
               fi
               cp /mnt/config-map/entrypoint.sh /mnt/scripts/
               chmod +x /mnt/scripts/entrypoint.sh
-              kubectl label pod "$POD_NAME" \
-                role=$([[ $ordinal -eq 0 ]] && echo primary || echo replica) \
-                --overwrite
+
+              curl -sk -X PATCH \
+                -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+                -H "Content-Type: application/strategic-merge-patch+json" \
+                --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+                -d "{\"metadata\":{\"labels\":{\"role\":\"${ROLE}\"}}}" \
+                "https://kubernetes.default.svc/api/v1/namespaces/musicplace/pods/${POD_NAME}"
           env:
             - name: POD_NAME
               valueFrom:
