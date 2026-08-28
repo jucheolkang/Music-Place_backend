@@ -25,24 +25,17 @@ spec:
               set -ex
               [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
               ordinal=${BASH_REMATCH[1]}
-
-              printf "[mysqld]\nserver-id=%s\n" "$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
-              if [[ $ordinal -eq 0 ]]; then
-                cp /mnt/config-map/primary.cnf /mnt/conf.d/
-                ROLE=primary
-              else
-                cp /mnt/config-map/replica.cnf /mnt/conf.d/
-                ROLE=replica
-              fi
+              echo "[mysqld]
+              server-id=$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
+              cp /mnt/config-map/replica.cnf /mnt/conf.d/
               cp /mnt/config-map/entrypoint.sh /mnt/scripts/
               chmod +x /mnt/scripts/entrypoint.sh
+              if [[ $ordinal -eq 0 ]]; then
+                echo "true" > /mnt/scripts/force-initial-primary
+              else
+                echo "false" > /mnt/scripts/force-initial-primary
+              fi
 
-              curl -sk -X PATCH \
-                -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-                -H "Content-Type: application/strategic-merge-patch+json" \
-                --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-                -d "{\"metadata\":{\"labels\":{\"role\":\"${ROLE}\"}}}" \
-                "https://kubernetes.default.svc/api/v1/namespaces/musicplace/pods/${POD_NAME}"
           env:
             - name: POD_NAME
               valueFrom:
