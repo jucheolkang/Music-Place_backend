@@ -1,0 +1,30 @@
+# k8s/mysql/failover/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-failover-sa
+  namespace: musicplace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mysql-failover-controller
+  namespace: musicplace
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mysql-failover-controller-binding
+  namespace: musicplace
+subjects:
+  - kind: ServiceAccount
+    name: mysql-failover-sa
+    namespace: musicplace
+roleRef:
+  kind: Role
+  name: mysql-failover-controller
+  apiGroup: rbac.authorization.k8s.io

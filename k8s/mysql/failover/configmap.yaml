@@ -1,0 +1,106 @@
+# k8s/mysql/failover/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-failover-script
+  namespace: musicplace
+data:
+  failover.sh: |
+    #!/bin/bash
+    set -uo pipefail
+    NAMESPACE=musicplace
+    TOKEN_PATH=/var/run/secrets/kubernetes.io/serviceaccount/token
+    CACERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    API="https://kubernetes.default.svc"
+
+    log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
+
+    k8s_get_pods_by_role() {
+      local role=$1
+      curl -sk -H "Authorization: Bearer $(cat $TOKEN_PATH)" --cacert $CACERT \
+        "$API/api/v1/namespaces/$NAMESPACE/pods?labelSelector=app=mysql,role=$role" \
+        | grep -o '"name":"mysql-[0-9]"' | sed 's/"name":"//;s/"//' | sort -u
+    }
+
+    label_pod() {
+      local pod=$1 role=$2
+      curl -sk -X PATCH \
+        -H "Authorization: Bearer $(cat $TOKEN_PATH)" \
+        -H "Content-Type: application/strategic-merge-patch+json" \
+        --cacert $CACERT \
+        -d "{\"metadata\":{\"labels\":{\"role\":\"$role\"}}}" \
+        "$API/api/v1/namespaces/$NAMESPACE/pods/$pod" > /dev/null
+    }
+
+    mysql_exec() {
+      local host=$1 sql=$2
+      mysql -h "$host" -uroot -p"${MYSQL_ROOT_PASSWORD}" -N -e "$sql" 2>/dev/null
+    }
+
+    promote() {
+      local candidate=$1
+      log "PROMOTING $candidate to primary"
+      mysql_exec "$candidate.mysql.$NAMESPACE.svc.cluster.local" \
+        "STOP SLAVE; RESET SLAVE ALL; SET GLOBAL read_only=0; SET GLOBAL super_read_only=0;"
+      label_pod "$candidate" primary
+
+      for pod in $(k8s_get_pods_by_role replica); do
+        [[ "$pod" == "$candidate" ]] && continue
+        log "RECONFIGURING $pod to follow new primary $candidate"
+        mysql_exec "$pod.mysql.$NAMESPACE.svc.cluster.local" "
+          STOP SLAVE;
+          CHANGE MASTER TO
+            MASTER_HOST='$candidate.mysql.$NAMESPACE.svc.cluster.local',
+            MASTER_USER='repl',
+            MASTER_PASSWORD='${MYSQL_REPL_PASSWORD}',
+            MASTER_AUTO_POSITION=1;
+          START SLAVE;
+        "
+      done
+    }
+
+    pick_best_replica() {
+      local best="" best_gtid=""
+      for pod in $(k8s_get_pods_by_role replica); do
+        local gtid
+        gtid=$(mysql_exec "$pod.mysql.$NAMESPACE.svc.cluster.local" "SELECT @@GLOBAL.gtid_executed;")
+        [[ -z "$gtid" ]] && continue
+        if [[ ${#gtid} -gt ${#best_gtid} ]]; then
+          best="$pod"
+          best_gtid="$gtid"
+        fi
+      done
+      echo "$best"
+    }
+
+    log "failover controller started"
+    while true; do
+      primary=$(k8s_get_pods_by_role primary | head -1)
+
+      if [[ -z "$primary" ]]; then
+        log "WARN: no pod labeled role=primary"
+      else
+        if ! mysqladmin ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
+          log "PRIMARY $primary DOWN — starting failover"
+          candidate=$(pick_best_replica)
+          if [[ -n "$candidate" ]]; then
+            promote "$candidate"
+          else
+            log "ERROR: no healthy replica candidate found"
+          fi
+        fi
+      fi
+
+      # split-brain guard: role=primary 라벨이 둘 이상이면 정상 primary 외엔 강등
+      current_primary=$(k8s_get_pods_by_role primary | head -1)
+      for pod in $(k8s_get_pods_by_role primary); do
+        if [[ "$pod" != "$current_primary" ]]; then
+          log "SPLIT-BRAIN GUARD: demoting stray primary label on $pod"
+          mysql_exec "$pod.mysql.$NAMESPACE.svc.cluster.local" \
+            "SET GLOBAL read_only=1; SET GLOBAL super_read_only=1;"
+          label_pod "$pod" replica
+        fi
+      done
+
+      sleep 3
+    done
