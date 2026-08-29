@@ -14,12 +14,12 @@ data:
     API="https://kubernetes.default.svc"
 
     log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
-
+ 
     k8s_get_pods_by_role() {
       local role=$1
       curl -sk -H "Authorization: Bearer $(cat $TOKEN_PATH)" --cacert $CACERT \
         "$API/api/v1/namespaces/$NAMESPACE/pods?labelSelector=app=mysql,role=$role" \
-        | grep -o '"name":"mysql-[0-9]"' | sed 's/"name":"//;s/"//' | sort -u
+        | grep -oE '"name": *"mysql-[0-9]"' | grep -oE 'mysql-[0-9]' | sort -u
     }
 
     label_pod() {
