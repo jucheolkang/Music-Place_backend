@@ -14,7 +14,7 @@ data:
     API="https://kubernetes.default.svc"
 
     log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
- 
+
     k8s_get_pods_by_role() {
       local role=$1
       curl -sk -H "Authorization: Bearer $(cat $TOKEN_PATH)" --cacert $CACERT \
@@ -76,47 +76,27 @@ data:
     log "failover controller started"
     while true; do
       primary=$(k8s_get_pods_by_role primary | head -1)
+      need_failover=false
 
       if [[ -z "$primary" ]]; then
-        log "failover controller started"
-        while true; do
-          primary=$(k8s_get_pods_by_role primary | head -1)
-          need_failover=false
+        log "WARN: no pod labeled role=primary"
+        need_failover=true
+      else
+        if ! mysqladmin ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
+          log "PRIMARY $primary DOWN — starting failover"
+          need_failover=true
+        fi
+      fi
 
-          if [[ -z "$primary" ]]; then
-            log "WARN: no pod labeled role=primary"
-            need_failover=true
-          else
-            if ! mysqladmin ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
-              log "PRIMARY $primary DOWN — starting failover"
-              need_failover=true
-            fi
-          fi
-        
-          if [[ "$need_failover" == "true" ]]; then
-            candidate=$(pick_best_replica)
-            if [[ -n "$candidate" ]]; then
-              promote "$candidate"
-            else
-              log "ERROR: no healthy replica candidate found"
-            fi
-          fi
-        
-          # split-brain guard
-          current_primary=$(k8s_get_pods_by_role primary | head -1)
-          for pod in $(k8s_get_pods_by_role primary); do
-            if [[ "$pod" != "$current_primary" ]]; then
-              log "SPLIT-BRAIN GUARD: demoting stray primary label on $pod"
-              mysql_exec "$pod.mysql.$NAMESPACE.svc.cluster.local" \
-                "SET GLOBAL read_only=1; SET GLOBAL super_read_only=1;"
-              label_pod "$pod" replica
-            fi
-          done
-        
-          sleep 3
-        done
+      if [[ "$need_failover" == "true" ]]; then
+        candidate=$(pick_best_replica)
+        if [[ -n "$candidate" ]]; then
+          promote "$candidate"
+        else
+          log "ERROR: no healthy replica candidate found"
+        fi
+      fi
 
-      # split-brain guard: role=primary 라벨이 둘 이상이면 정상 primary 외엔 강등
       current_primary=$(k8s_get_pods_by_role primary | head -1)
       for pod in $(k8s_get_pods_by_role primary); do
         if [[ "$pod" != "$current_primary" ]]; then
