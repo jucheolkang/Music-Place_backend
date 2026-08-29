@@ -20,33 +20,12 @@ data:
     read_only=ON
     super_read_only=ON
   entrypoint.sh: |
-    #!/bin/bash
-    set -eo pipefail
-    [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
-    ordinal=${BASH_REMATCH[1]}
-
+    FORCE_INITIAL_PRIMARY=$(cat /mnt/scripts/force-initial-primary 2>/dev/null || echo false)
     if [[ -d /var/lib/mysql/mysql ]]; then
-      exec docker-entrypoint.sh mysqld
+    exec docker-entrypoint.sh mysqld
     fi
-
     if [[ "$FORCE_INITIAL_PRIMARY" == "true" ]]; then
-      exec docker-entrypoint.sh mysqld
-    fi
-
-    docker-entrypoint.sh mysqld --skip-slave-start --read-only=0 --super-read-only=0 &
-    pid=$!
-    until mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done
-
-    if [[ -s /tmp/clone/dump.sql ]]; then
-      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < /tmp/clone/dump.sql
-      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
-        CHANGE MASTER TO
-          MASTER_HOST='${MASTER_HOST:-mysql-0.mysql.musicplace.svc.cluster.local}',
-          MASTER_USER='repl',
-          MASTER_PASSWORD='${MYSQL_REPL_PASSWORD}',
-          MASTER_AUTO_POSITION=1;
-        START SLAVE;
-    EOSQL
+    exec docker-entrypoint.sh mysqld
     fi
 
     wait $pid
