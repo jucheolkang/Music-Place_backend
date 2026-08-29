@@ -27,14 +27,17 @@ spec:
               ordinal=${BASH_REMATCH[1]}
               echo "[mysqld]
               server-id=$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
-              cp /mnt/config-map/replica.cnf /mnt/conf.d/
-              cp /mnt/config-map/entrypoint.sh /mnt/scripts/
-              chmod +x /mnt/scripts/entrypoint.sh
+
               if [[ $ordinal -eq 0 ]]; then
+                cp /mnt/config-map/primary.cnf /mnt/conf.d/
                 echo "true" > /mnt/scripts/force-initial-primary
               else
+                cp /mnt/config-map/replica.cnf /mnt/conf.d/
                 echo "false" > /mnt/scripts/force-initial-primary
               fi
+
+              cp /mnt/config-map/entrypoint.sh /mnt/scripts/
+              chmod +x /mnt/scripts/entrypoint.sh
 
           env:
             - name: POD_NAME
