@@ -22,6 +22,12 @@ data:
         | grep -oE '"name": *"mysql-[0-9]"' | grep -oE 'mysql-[0-9]' | sort -u
     }
 
+    k8s_get_all_mysql_pods() {
+      curl -sk -H "Authorization: Bearer $(cat $TOKEN_PATH)" --cacert $CACERT \
+        "$API/api/v1/namespaces/$NAMESPACE/pods?labelSelector=app=mysql" \
+        | grep -oE '"name": *"mysql-[0-9]"' | grep -oE 'mysql-[0-9]' | sort -u
+    }
+
     label_pod() {
       local pod=$1 role=$2
       curl -sk -X PATCH \
@@ -34,7 +40,7 @@ data:
 
     mysql_exec() {
       local host=$1 sql=$2
-      mysql -h "$host" -uroot -p"${MYSQL_ROOT_PASSWORD}" -N -e "$sql" 2>/dev/null
+      mysql -h "$host" -uroot -p"${MYSQL_ROOT_PASSWORD}" --connect-timeout=2 -N -e "$sql" 2>/dev/null
     }
 
     promote() {
@@ -73,6 +79,23 @@ data:
       echo "$best"
     }
 
+    rejoin() {
+      local pod=$1 primary=$2
+      log "REJOINING $pod as replica of $primary"
+      mysql_exec "$pod.mysql.$NAMESPACE.svc.cluster.local" "
+        SET GLOBAL read_only=1;
+        SET GLOBAL super_read_only=1;
+        STOP SLAVE;
+        CHANGE MASTER TO
+          MASTER_HOST='$primary.mysql.$NAMESPACE.svc.cluster.local',
+          MASTER_USER='repl',
+          MASTER_PASSWORD='${MYSQL_REPL_PASSWORD}',
+          MASTER_AUTO_POSITION=1;
+        START SLAVE;
+      "
+      label_pod "$pod" replica
+    }
+
     log "failover controller started"
     while true; do
       primary=$(k8s_get_pods_by_role primary | head -1)
@@ -82,7 +105,7 @@ data:
         log "WARN: no pod labeled role=primary"
         need_failover=true
       else
-        if ! mysqladmin ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
+        if ! mysqladmin --connect-timeout=2 ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
           log "PRIMARY $primary DOWN — starting failover"
           need_failover=true
         fi
@@ -97,6 +120,7 @@ data:
         fi
       fi
 
+      # split-brain guard
       current_primary=$(k8s_get_pods_by_role primary | head -1)
       for pod in $(k8s_get_pods_by_role primary); do
         if [[ "$pod" != "$current_primary" ]]; then
@@ -106,6 +130,18 @@ data:
           label_pod "$pod" replica
         fi
       done
+
+      # 고아 pod(role 라벨 없음) 재합류
+      if [[ -n "$current_primary" ]]; then
+        primary_pods=$(k8s_get_pods_by_role primary)
+        replica_pods=$(k8s_get_pods_by_role replica)
+        labeled_pods=$(printf "%s\n%s" "$primary_pods" "$replica_pods")
+        for pod in $(k8s_get_all_mysql_pods); do
+          if ! grep -qx "$pod" <<< "$labeled_pods"; then
+            rejoin "$pod" "$current_primary"
+          fi
+        done
+      fi
 
       sleep 3
     done
