@@ -97,20 +97,31 @@ data:
     }
 
     log "failover controller started"
+    FAIL_COUNT=0
+    FAILURE_THRESHOLD=3
+    
     while true; do
       primary=$(k8s_get_pods_by_role primary | head -1)
       need_failover=false
 
       if [[ -z "$primary" ]]; then
         log "WARN: no pod labeled role=primary"
-        need_failover=true
+        FAIL_COUNT=$((FAIL_COUNT + 1))
       else
-        if ! mysqladmin --connect-timeout=2 ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
-          log "PRIMARY $primary DOWN — starting failover"
-          need_failover=true
+        if mysqladmin --connect-timeout=5 ping -h "$primary.mysql.$NAMESPACE.svc.cluster.local" --silent 2>/dev/null; then
+          FAIL_COUNT=0
+        else
+          FAIL_COUNT=$((FAIL_COUNT + 1))
+          log "PRIMARY $primary health check failed ($FAIL_COUNT/$FAILURE_THRESHOLD)"
         fi
       fi
 
+      if [[ $FAIL_COUNT -ge $FAILURE_THRESHOLD ]]; then
+        log "PRIMARY confirmed DOWN after $FAILURE_THRESHOLD consecutive failures — starting failover"
+        need_failover=true
+        FAIL_COUNT=0
+      fi
+    
       if [[ "$need_failover" == "true" ]]; then
         candidate=$(pick_best_replica)
         if [[ -n "$candidate" ]]; then
