@@ -1,0 +1,44 @@
+# k8s/mysql/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: musicplace
+data:
+  replica.cnf: |
+    [mysqld]
+    log-bin=mysql-bin
+    gtid_mode=ON
+    enforce-gtid-consistency=ON
+    log-slave-updates=ON
+    read_only=ON
+    super_read_only=ON
+  entrypoint.sh: |
+    #!/bin/bash
+    set -eo pipefail
+
+    if [[ -d /var/lib/mysql/mysql ]]; then
+      exec docker-entrypoint.sh mysqld
+    fi
+
+    docker-entrypoint.sh mysqld --skip-slave-start --read-only=0 --super-read-only=0 &
+    pid=$!
+    until mysqladmin ping -h 127.0.0.1 --silent; do sleep 1; done
+
+    if [[ -s /tmp/clone/dump.sql ]]; then
+      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" < /tmp/clone/dump.sql
+      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+        CHANGE MASTER TO
+          MASTER_HOST='mysql-0.mysql.musicplace.svc.cluster.local',
+          MASTER_USER='repl',
+          MASTER_PASSWORD='${MYSQL_REPL_PASSWORD}',
+          MASTER_AUTO_POSITION=1;
+        START SLAVE;
+    EOSQL
+      # replica로 정상 편입됐으니 다시 안전하게 잠금
+      mysql -h 127.0.0.1 -uroot -p"${MYSQL_ROOT_PASSWORD}" -e \
+        "SET GLOBAL super_read_only=1; SET GLOBAL read_only=1;"
+    fi
+    # dump.sql이 없는 경우(최초 클러스터 부트스트랩)만 read_only=0로 남아 primary 역할
+
+    wait $pid

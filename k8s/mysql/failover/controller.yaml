@@ -1,0 +1,47 @@
+# k8s/mysql/failover/controller.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-failover-controller
+  namespace: musicplace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-failover-controller
+  template:
+    metadata:
+      labels:
+        app: mysql-failover-controller
+    spec:
+      serviceAccountName: mysql-failover-sa
+      containers:
+        - name: controller
+          image: mysql:8.0
+          command: ["bash", "/scripts/failover.sh"]
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: musicplace-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_REPL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: repl-password
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      volumes:
+        - name: scripts
+          configMap:
+            name: mysql-failover-script
+            defaultMode: 0755

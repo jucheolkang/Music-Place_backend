@@ -1,0 +1,123 @@
+# k8s/mysql/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: musicplace
+spec:
+  serviceName: mysql
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      serviceAccountName: mysql-sa
+      initContainers:
+        - name: init-config
+          image: mysql:8.0
+          command: [ "bash", "-c" ]
+          args:
+            - |
+              set -ex
+              [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
+              ordinal=${BASH_REMATCH[1]}
+              echo "[mysqld]
+              server-id=$((100 + ordinal))" > /mnt/conf.d/server-id.cnf
+              cp /mnt/config-map/replica.cnf /mnt/conf.d/
+              cp /mnt/config-map/entrypoint.sh /mnt/scripts/
+              chmod +x /mnt/scripts/entrypoint.sh
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - name: conf
+              mountPath: /mnt/conf.d
+            - name: scripts
+              mountPath: /mnt/scripts
+            - name: config-map
+              mountPath: /mnt/config-map
+
+        - name: clone-data
+          image: mysql:8.0
+          command: [ "bash", "-c" ]
+          args:
+            - |
+              set -ex
+              [[ $POD_NAME =~ -([0-9]+)$ ]] || exit 1
+              ordinal=${BASH_REMATCH[1]}
+              [[ $ordinal -eq 0 ]] && exit 0
+              [[ -d /var/lib/mysql/mysql ]] && exit 0
+              mysqldump -h mysql-0.mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                --all-databases --single-transaction --source-data=2 \
+                > /mnt/clone/dump.sql
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: mysql-secret, key: root-password }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: clone
+              mountPath: /mnt/clone
+
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          command: [ "bash", "/mnt/scripts/entrypoint.sh" ]
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: mysql-secret, key: root-password }
+            - name: MYSQL_REPL_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: mysql-secret, key: repl-password }
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: conf
+              mountPath: /etc/mysql/conf.d
+            - name: scripts
+              mountPath: /mnt/scripts
+            - name: clone
+              mountPath: /tmp/clone
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+      volumes:
+        - name: conf
+          emptyDir: {}
+        - name: scripts
+          emptyDir: {}
+        - name: config-map
+          configMap:
+            name: mysql-config
+        - name: clone
+          emptyDir: {}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
