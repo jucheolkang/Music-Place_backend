@@ -24,8 +24,7 @@ export const options = {
     },
 };
 
-const BASE_URL = __ENV.TARGET_BASE_URL || 'http://localhost:8080';
-
+const BASE_URL = __ENV.TARGET_BASE_URL || 'http://app:8080';
 const REQUESTER = { member_id: 'testuser6', pw: 'Test1234!' };
 const TARGET_ID = 'testuser7';
 const TARGET_NICKNAME = 'Tester7';
