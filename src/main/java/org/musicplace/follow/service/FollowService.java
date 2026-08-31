@@ -10,6 +10,7 @@ import org.musicplace.global.exception.BusinessException;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.service.SignInService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class FollowService {
                 memberId,
                 dto.getTarget_id())) {
 
-            throw new BusinessException(ErrorCode.CANNOT_FOLLOW_SELF);
+            throw new BusinessException(ErrorCode.FOLLOW_ALREADY_EXISTS);
         }
 
         FollowEntity follow = FollowEntity.builder()
@@ -45,7 +46,12 @@ public class FollowService {
                 .targetProfileImgUrl(dto.getProfile_img_url())
                 .build();
 
-        followRepository.save(follow);
+        try {
+            followRepository.save(follow);
+        } catch (DataIntegrityViolationException e) {
+            // exists 체크를 통과한 두 요청이 동시에 save를 시도하는 경쟁 상태 케이스
+            throw new BusinessException(ErrorCode.FOLLOW_ALREADY_EXISTS);
+        }
 
         return follow.getFollowId();
     }
