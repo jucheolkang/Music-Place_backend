@@ -56,6 +56,16 @@ public class UserEntity implements UserDetails {
     @Comment("권한")
     private String role;
 
+    // follow 실험을 위한 컬럼
+    @Column(name = "follower_count", nullable = false)
+    @Comment("팔로워 수 캐시")
+    private Long followerCount = 0L;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    @Comment("낙관적 락 버전")
+    private Long version;
+
     @Builder
     public UserEntity(
             String memberId,
@@ -105,4 +115,9 @@ public class UserEntity implements UserDetails {
     @Override public boolean isAccountNonLocked() { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return !deleteAccount; }
+
+    // follow 실험을 위한 메소드
+    public void increaseFollowerCount() {
+        this.followerCount++;
+    }
 }
