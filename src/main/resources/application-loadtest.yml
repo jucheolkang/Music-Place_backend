@@ -40,6 +40,36 @@ spring:
           max-idle: 10
           min-idle: 5
 
+  kafka:
+    bootstrap-servers: kafka:9092   # 컨테이너 네트워크 기준. 로컬 IDE 실행 시 localhost:9094로 오버라이드
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true      # 프로듀서 재시도로 인한 중복 발행 방지
+        max.in.flight.requests.per.connection: 5
+        retries: 3
+    consumer:
+      group-id: follow-count-consumer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false        # 수동 커밋으로 정확성 확보 (8번 항목에서 이유 설명)
+      properties:
+        spring.json.trusted.packages: "com.musicplace.follow.event"
+    listener:
+      type: batch
+      ack-mode: MANUAL_IMMEDIATE
+      concurrency: 3                   # 파티션 수와 맞춤
+
+app:
+  kafka:
+    topic:
+      follow-count-events: follow-count-events
+      follow-count-events-dlt: follow-count-events.DLT
+
+
 server:
   port: 8080
   tomcat:

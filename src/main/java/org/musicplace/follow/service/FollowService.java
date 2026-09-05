@@ -5,11 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.musicplace.follow.domain.FollowEntity;
 import org.musicplace.follow.dto.FollowResponseDto;
 import org.musicplace.follow.dto.FollowSaveDto;
+import org.musicplace.follow.kafka.event.FollowChangedEvent;
 import org.musicplace.follow.repository.FollowRepository;
 import org.musicplace.global.exception.BusinessException;
 import org.musicplace.global.exception.ErrorCode;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.service.SignInService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ public class FollowService {
 
     private final FollowRepository followRepository;
     private final SignInService signInService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public Long followSave(String memberId, FollowSaveDto dto) {
@@ -49,9 +52,11 @@ public class FollowService {
         try {
             followRepository.save(follow);
         } catch (DataIntegrityViolationException e) {
-            // exists 체크를 통과한 두 요청이 동시에 save를 시도하는 경쟁 상태 케이스
             throw new BusinessException(ErrorCode.FOLLOW_ALREADY_EXISTS);
         }
+
+        applicationEventPublisher.publishEvent(
+                new FollowChangedEvent(dto.getTarget_id(), memberId));
 
         return follow.getFollowId();
     }
@@ -68,6 +73,9 @@ public class FollowService {
         }
 
         followRepository.delete(follow);
+
+        applicationEventPublisher.publishEvent(
+                new FollowChangedEvent(follow.getTargetId(), memberId));
     }
 
     public List<FollowResponseDto> followFindAll(String memberId) {
