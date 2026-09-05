@@ -16,7 +16,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: ${SQL_INIT_MODE:always}
 
   data:
     redis:
@@ -28,7 +28,7 @@ spring:
     port: 8080
 
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}   # 컨테이너 기본값 유지, 로컬 실행 시 환경변수로 오버라이드
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -43,8 +43,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       auto-offset-reset: earliest
       enable-auto-commit: false
-      properties:
-        spring.json.trusted.packages: "org.musicplace.follow.kafka.event"
+      # trusted-packages는 YAML이 아니라 KafkaConsumerConfig 코드에서만 설정합니다 (아래 6-2 참고)
     listener:
       type: batch
       ack-mode: MANUAL_IMMEDIATE

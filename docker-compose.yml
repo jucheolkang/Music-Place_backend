@@ -6,7 +6,7 @@ services:
     container_name: musicplace_mysql
     restart: always
     ports:
-      - "13306:3306"  # 로컬에서 MySQL Workbench 등으로 접근 가능
+      - "13306:3306"
     volumes:
       - ./db/mysql/data:/var/lib/mysql
       - ./db/mysql/init:/docker-entrypoint-initdb.d
@@ -22,7 +22,7 @@ services:
     container_name: musicplace_redis
     restart: always
     ports:
-      - "16379:6379"  # 로컬에서 redis-cli 등으로 접근 가능
+      - "16379:6379"
     volumes:
       - ./db/redis/data:/data
     command: ["redis-server", "--requirepass", "${DOCKER_REDIS_PASSWORD}"]
@@ -40,11 +40,11 @@ services:
       - musicplace-network
     ports:
       - "9092:9092"
-      - "9094:9094"   # 추가: 호스트(IDE)에서 접속할 포트
+      - "9094:9094"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094   # EXTERNAL 추가
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -55,7 +55,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       CLUSTER_ID: "musicplace-local-cluster"
     healthcheck:
-      test: [ "CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092" ]
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -73,3 +73,10 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
       - kafka
+
+# ===================================
+# Docker Network
+# ===================================
+networks:
+  musicplace-network:
+    driver: bridge

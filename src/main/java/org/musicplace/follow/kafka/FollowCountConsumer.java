@@ -27,6 +27,8 @@ public class FollowCountConsumer {
     )
     public void consume(List<ConsumerRecord<String, FollowCountEvent>> records, Acknowledgment ack) {
 
+        if (true) throw new RuntimeException("DLT 테스트용 강제 예외"); // TODO: 테스트 후 반드시 삭제
+
         // 같은 배치 안에 같은 targetId가 여러 번 나와도 재계산은 한 번만 하면 충분
         Set<String> targetIds = records.stream()
                 .map(r -> r.value().targetId())

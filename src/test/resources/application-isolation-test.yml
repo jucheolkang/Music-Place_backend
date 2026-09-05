@@ -24,5 +24,9 @@ spring:
       port: 16379
       password: ${DOCKER_REDIS_PASSWORD}
 
+  kafka:
+    bootstrap-servers: localhost:9094
+
+
 JWT_SECRET: test-secret-key
 JWT_ACCESS_TIME: 3600000
