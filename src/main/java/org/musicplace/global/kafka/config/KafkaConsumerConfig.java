@@ -1,5 +1,7 @@
 package org.musicplace.global.kafka.config;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.musicplace.follow.kafka.event.FollowCountEvent;
@@ -10,6 +12,8 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.MicrometerConsumerListener;
+import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -21,30 +25,27 @@ import org.springframework.util.backoff.ExponentialBackOff;
 public class KafkaConsumerConfig {
 
     @Bean
-    public ConsumerFactory<String, FollowCountEvent> consumerFactory(KafkaProperties props) {
-        // application.yml의 spring.json.trusted.packages 프로퍼티는 지웠습니다 (6-2 참고).
-        // 여기 코드에서만 trustedPackages를 설정하고, YAML에는 이 키를 절대 추가하지 않습니다
-        // (둘 다 쓰면 "must be configured with property setters, or via configuration properties; not both" 예외).
+    public ConsumerFactory<String, FollowCountEvent> consumerFactory(KafkaProperties props, MeterRegistry meterRegistry) {
         JsonDeserializer<FollowCountEvent> deserializer = new JsonDeserializer<>(FollowCountEvent.class);
         deserializer.addTrustedPackages("org.musicplace.follow.kafka.event");
-        // 프로듀서가 메시지에 __TypeId__ 헤더를 같이 실어 보내는데, 기본 설정에서는 컨슈머가
-        // 생성자로 지정한 타입보다 이 헤더값을 우선 신뢰합니다. 항상 FollowCountEvent로만 고정해서
-        // 헤더 기반 타입 추론 자체를 끄는 게 더 안전합니다.
         deserializer.setUseTypeMapperForKey(false);
         deserializer.setRemoveTypeHeaders(true);
         deserializer.setUseTypeHeaders(false);
 
-        return new DefaultKafkaConsumerFactory<>(
+        DefaultKafkaConsumerFactory<String, FollowCountEvent> factory = new DefaultKafkaConsumerFactory<>(
                 props.buildConsumerProperties(null),
                 new StringDeserializer(),
                 deserializer
         );
+        factory.addListener(new MicrometerConsumerListener<>(meterRegistry));  // ← 이 한 줄만 추가
+        return factory;
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, FollowCountEvent> batchKafkaListenerContainerFactory(
             ConsumerFactory<String, FollowCountEvent> consumerFactory,
-            KafkaTemplate<String, FollowCountEvent> kafkaTemplate
+            KafkaTemplate<String, FollowCountEvent> kafkaTemplate,
+            MeterRegistry meterRegistry
     ) {
         ConcurrentKafkaListenerContainerFactory<String, FollowCountEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -57,10 +58,19 @@ public class KafkaConsumerConfig {
         ExponentialBackOff backOff = new ExponentialBackOff(1000L, 2.0);
         backOff.setMaxElapsedTime(10_000L);
 
-        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
-                new DeadLetterPublishingRecoverer(kafkaTemplate),
-                backOff
-        );
+        // Kafka/Kafka client 자체에는 "DLT에 몇 건 쌓였다"는 메트릭이 없어서 직접 셉니다.
+        // DeadLetterPublishingRecoverer를 감싸서, 실제로 DLT로 넘어가는 순간마다 카운터를 1 증가시킵니다.
+        Counter dltCounter = Counter.builder("follow_count_events_dlt_total")
+                .description("follow-count-events에서 최종 실패해 DLT로 전송된 메시지 수")
+                .register(meterRegistry);
+
+        DeadLetterPublishingRecoverer dltRecoverer = new DeadLetterPublishingRecoverer(kafkaTemplate);
+        ConsumerRecordRecoverer countingRecoverer = (record, exception) -> {
+            dltCounter.increment();
+            dltRecoverer.accept(record, exception);
+        };
+
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(countingRecoverer, backOff);
         errorHandler.setRetryListeners((record, ex, deliveryAttempt) ->
                 log.warn("follow-count-events 재시도 {}회째, offset={}, cause={}",
                         deliveryAttempt, record.offset(), ex.getMessage()));

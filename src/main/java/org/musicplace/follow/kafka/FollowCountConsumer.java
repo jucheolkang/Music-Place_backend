@@ -27,18 +27,16 @@ public class FollowCountConsumer {
     )
     public void consume(List<ConsumerRecord<String, FollowCountEvent>> records, Acknowledgment ack) {
 
-        if (true) throw new RuntimeException("DLT 테스트용 강제 예외"); // TODO: 테스트 후 반드시 삭제
-
         // 같은 배치 안에 같은 targetId가 여러 번 나와도 재계산은 한 번만 하면 충분
         Set<String> targetIds = records.stream()
                 .map(r -> r.value().targetId())
                 .collect(Collectors.toSet());
 
         for (String targetId : targetIds) {
+            // 기존 UserRepository.recalculateFollowerCount(memberId)를 그대로 호출
             followCountTransactionalOps.recalculateFollowerCount(targetId);
         }
 
-        log.info("follow-count-events 배치 처리 완료, 대상 {}건: {}", targetIds.size(), targetIds);
         ack.acknowledge();
     }
 }

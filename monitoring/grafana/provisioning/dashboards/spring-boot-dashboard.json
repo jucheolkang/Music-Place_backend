@@ -238,6 +238,38 @@
           "legendFormat": "Usage Ratio"
         }
       ]
+    },
+
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Follow Count Consumer Lag",
+      "datasource": "prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "targets": [
+        {
+          "expr": "sum by (topic) (kafka_consumer_fetch_manager_records_lag{topic=\"follow-count-events\", instance=~\"$instance\"})",
+          "legendFormat": "{{topic}} lag"
+        }
+      ]
+    },
+
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Follow Count DLT Messages",
+      "datasource": "prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "targets": [
+        {
+          "expr": "follow_count_events_dlt_total{instance=~\"$instance\"}",
+          "legendFormat": "DLT total (cumulative)"
+        },
+        {
+          "expr": "increase(follow_count_events_dlt_total{instance=~\"$instance\"}[5m])",
+          "legendFormat": "DLT increase (5m)"
+        }
+      ]
     }
 
   ]
