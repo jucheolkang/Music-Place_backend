@@ -1,3 +1,6 @@
+# src/main/resources/application.yml
+# 기본 프로파일
+
 spring:
   datasource:
     url: ${MYSQL_URL}

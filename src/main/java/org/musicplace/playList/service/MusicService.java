@@ -31,6 +31,7 @@ public class MusicService {
                 .build();
 
         musicRepository.save(music);
+        refreshSearchText(playlistId);
         return music.getMusicId();
     }
 
@@ -51,10 +52,13 @@ public class MusicService {
             }
             music.delete();
         }
+
+        refreshSearchText(playlistId);
         return true;
     }
 
     public List<ResponseMusicDto> musicFindAll(Long playlistId) {
+        // 조회만 하는 메서드라 재계산 불필요 — 변경 안 함
         plService.validatePlaylistActive(playlistId);
 
         return musicRepository
@@ -68,5 +72,14 @@ public class MusicService {
                         .build())
                 .toList();
     }
-}
 
+    private void refreshSearchText(Long playlistId) {
+        List<String> videoTitles = musicRepository
+                .findByPlaylistIdAndMusicDeleteFalse(playlistId)
+                .stream()
+                .map(MusicEntity::getVideoTitle)
+                .toList();
+
+        plService.recalculateSearchText(playlistId, videoTitles);
+    }
+}

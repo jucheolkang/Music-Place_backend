@@ -1,7 +1,10 @@
 package org.musicplace.playList.repository;
 
 import org.musicplace.playList.domain.PLEntity;
+import org.musicplace.playList.dto.PlaylistSearchProjection;
 import org.musicplace.playList.dto.ResponsePLDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -84,19 +87,73 @@ public interface PLRepository extends JpaRepository<PLEntity, Long> {
 
     /** 전체 공개 플레이리스트 */
     @Query("""
-        select new org.musicplace.playList.dto.ResponsePLDto(
-            p.playlistId,
-            p.title,
-            p.nickname,
-            p.coverImg,
-            p.onOff,
-            p.comment,
-            p.memberId
-        )
-        from PLEntity p
-        where p.onOff = org.musicplace.playList.domain.OnOff.Public
-        and p.deleteState = false
-        order by p.playlistId desc
+    select new org.musicplace.playList.dto.ResponsePLDto(
+        p.playlistId,
+        p.title,
+        p.nickname,
+        p.coverImg,
+        p.onOff,
+        p.comment,
+        p.memberId
+    )
+    from PLEntity p
+    where p.onOff = org.musicplace.playList.domain.OnOff.Public
+    and p.deleteState = false
+    order by p.playlistId desc
     """)
-    List<ResponsePLDto> findAllPublicPlaylists();
+    Page<ResponsePLDto> findAllPublicPlaylists(Pageable pageable);
+
+    @Query(
+            value = """
+        SELECT
+            p.playlist_id AS playlistId,
+            p.title       AS title,
+            p.nickname    AS nickname,
+            p.cover_img   AS coverImg,
+            p.onoff       AS onoff,
+            p.comment     AS comment,
+            p.member_id   AS memberId,
+            MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) AS relevanceScore
+        FROM PLAYLIST p
+        WHERE p.delete_state = false
+          AND p.onoff = 'Public'
+          AND MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) > 0
+        ORDER BY relevanceScore DESC, p.playlist_id DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM PLAYLIST p
+        WHERE p.delete_state = false
+          AND p.onoff = 'Public'
+          AND MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) > 0
+        """,
+            nativeQuery = true
+    )
+    Page<PlaylistSearchProjection> searchByRelevance(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query(
+            value = """
+        SELECT
+            p.playlist_id AS playlistId,
+            p.title       AS title,
+            p.nickname    AS nickname,
+            p.cover_img   AS coverImg,
+            p.onoff       AS onoff,
+            p.comment     AS comment,
+            p.member_id   AS memberId,
+            MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) AS relevanceScore
+        FROM PLAYLIST p
+        WHERE p.delete_state = false
+          AND p.onoff = 'Public'
+          AND MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) > 0
+        ORDER BY p.register_date DESC, p.playlist_id DESC
+        """,
+            countQuery = """
+        SELECT COUNT(*) FROM PLAYLIST p
+        WHERE p.delete_state = false
+          AND p.onoff = 'Public'
+          AND MATCH(p.title, p.comment, p.search_text) AGAINST (:keyword IN NATURAL LANGUAGE MODE) > 0
+        """,
+            nativeQuery = true
+    )
+    Page<PlaylistSearchProjection> searchByLatest(@Param("keyword") String keyword, Pageable pageable);
 }

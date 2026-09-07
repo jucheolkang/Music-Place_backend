@@ -42,6 +42,10 @@ public class PLEntity extends AuditInformation {
     @Column(name = "DELETE_STATE", nullable = false)
     private boolean deleteState = false;
 
+    // 검색용 비정규화 컬럼: 재생목록에 포함된 곡들의 videoTitle을 합쳐서 저장
+    @Column(name = "SEARCH_TEXT", columnDefinition = "TEXT")
+    private String searchText;
+
     @Builder
     public PLEntity(String memberId, String title, String nickname,
                     OnOff onOff, String coverImg, String comment) {
@@ -58,6 +62,11 @@ public class PLEntity extends AuditInformation {
         this.onOff = onOff;
         this.comment = comment;
         this.coverImg = cover_img;
+    }
+
+    // 재계산 결과를 반영하는 전용 메서드 (직접 setter 노출 대신 의도를 드러냄)
+    public void updateSearchText(String searchText) {
+        this.searchText = searchText;
     }
 
     public void delete() {

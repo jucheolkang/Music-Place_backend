@@ -1,3 +1,6 @@
+# docker-compose.yml
+# 로컬 실행용 docker compose 파일
+
 version: '3.9'
 
 services:
