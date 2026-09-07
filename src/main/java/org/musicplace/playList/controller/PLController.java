@@ -63,7 +63,7 @@ public class PLController {
         return plService.findMyPlaylists(loginUser.getMemberId());
     }
 
-    @GetMapping("/playList/public")
+    @GetMapping("/public")
     public ResponseEntity<Page<ResponsePLDto>> publicPlaylists(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
@@ -89,7 +89,7 @@ public class PLController {
         return plService.getOtherUserPublicPlaylists(otherMemberId);
     }
 
-    @GetMapping("/playList/search")
+    @GetMapping("/search")
     public ResponseEntity<Page<ResponseSearchDto>> search(
             @RequestParam String keyword,
             @RequestParam(defaultValue = "RELEVANCE") SortType sort,
