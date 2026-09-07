@@ -11,6 +11,8 @@ import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.repository.PLRepository;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -89,8 +91,8 @@ public class PLService {
         return plRepository.findOtherUserPublicPlaylists(otherMemberId);
     }
 
-    public List<ResponsePLDto> findPublicPlaylists() {
-        return plRepository.findAllPublicPlaylists();
+    public Page<ResponsePLDto> findPublicPlaylists(Pageable pageable) {
+        return plRepository.findAllPublicPlaylists(pageable);
     }
 
 
