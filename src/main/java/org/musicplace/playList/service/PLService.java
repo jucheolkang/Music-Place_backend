@@ -63,6 +63,15 @@ public class PLService {
         pl.delete();
     }
 
+    @Transactional
+    public void recalculateSearchText(Long playlistId, List<String> videoTitles) {
+        PLEntity pl = plRepository.findById(playlistId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PLAYLIST_NOT_FOUND));
+
+        String searchText = String.join(" ", videoTitles);
+        pl.updateSearchText(searchText);
+    }
+
 
     public List<ResponsePLDto> findMyPlaylists(String memberId) {
         return plRepository.findMyPlaylists(memberId);
