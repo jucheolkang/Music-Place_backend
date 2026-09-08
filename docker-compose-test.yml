@@ -1,8 +1,6 @@
 # docker-compose-test.yml
 # 부하 테스트, 모니터링을 위한 docker compose 파일
 
-version: '3.9'
-
 # ===================================
 # Docker Network
 # ===================================
@@ -293,3 +291,4 @@ volumes:
   grafana-data:
   prometheus-data:
   loki-data:
+  es-data:

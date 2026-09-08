@@ -1,8 +1,6 @@
 # docker-compose.yml
 # 로컬 실행용 docker compose 파일
 
-version: '3.9'
-
 services:
   mysql:
     image: mysql:8.0
@@ -109,3 +107,9 @@ services:
 networks:
   musicplace-network:
     driver: bridge
+
+# ===================================
+# Docker Volumes
+# ===================================
+volumes:
+  es-data:

@@ -47,7 +47,8 @@ public class SecurityConfig {
                                 "/health",
                                 "/info",
                                 "/targets",
-                                "/experiment/**" // follow 실험 엔드 포인트
+                                "/experiment/**", // follow 실험 엔드 포인트
+                                "/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

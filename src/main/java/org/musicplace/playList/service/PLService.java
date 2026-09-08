@@ -8,9 +8,11 @@ import org.musicplace.playList.domain.PLEntity;
 import org.musicplace.playList.dto.PLSaveDto;
 import org.musicplace.playList.dto.PLUpdateDto;
 import org.musicplace.playList.dto.ResponsePLDto;
+import org.musicplace.playList.kafka.event.PlaylistChangedEvent;
 import org.musicplace.playList.repository.PLRepository;
 import org.musicplace.user.domain.UserEntity;
 import org.musicplace.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class PLService {
 
     private final PLRepository plRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Long plSave(String memberId, PLSaveDto dto) {
@@ -44,6 +47,7 @@ public class PLService {
                 .build();
 
         plRepository.save(playlist);
+        eventPublisher.publishEvent(new PlaylistChangedEvent(playlist.getPlaylistId()));
         return playlist.getPlaylistId();
     }
 
@@ -57,12 +61,14 @@ public class PLService {
                 dto.getCoverImg(),
                 dto.getComment()
         );
+        eventPublisher.publishEvent(new PlaylistChangedEvent(playlistId));
     }
 
     @Transactional
     public void plDelete(Long playlistId) {
         PLEntity pl = findActivePlaylist(playlistId);
         pl.delete();
+        eventPublisher.publishEvent(new PlaylistChangedEvent(playlistId));
     }
 
     @Transactional
@@ -72,6 +78,7 @@ public class PLService {
 
         String searchText = String.join(" ", videoTitles);
         pl.updateSearchText(searchText);
+        eventPublisher.publishEvent(new PlaylistChangedEvent(playlistId));
     }
 
 
