@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.musicplace.playList.domain.SortType;
 import org.musicplace.playList.dto.ResponsePLDto;
 import org.musicplace.playList.dto.ResponseSearchDto;
+import org.musicplace.playList.search.PLElasticSearchService;
 import org.musicplace.playList.service.PLSearchService;
 import org.musicplace.playList.service.PLService;
 import org.musicplace.playList.dto.PLSaveDto;
@@ -33,6 +34,7 @@ public class PLController {
 
     private final PLService plService;
     private final PLSearchService plSearchService;
+    private final PLElasticSearchService plElasticSearchService;
 
     @PostMapping
     public Long save(
@@ -98,6 +100,17 @@ public class PLController {
     ) {
         Pageable pageable = PageRequest.of(page, Math.min(size, 50));
         return ResponseEntity.ok(plSearchService.search(keyword, sort, pageable));
+    }
+
+    @GetMapping("/search/es")
+    public ResponseEntity<Page<ResponseSearchDto>> searchEs(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "RELEVANCE") SortType sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50));
+        return ResponseEntity.ok(plElasticSearchService.search(keyword, sort, pageable));
     }
 
 }

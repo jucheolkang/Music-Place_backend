@@ -23,4 +23,20 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic playlistIndexEventsTopic() {
+        return TopicBuilder.name("playlist-index-events")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic playlistIndexEventsDlt() {
+        return TopicBuilder.name("playlist-index-events.DLT")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

@@ -82,4 +82,8 @@ public class MusicService {
 
         plService.recalculateSearchText(playlistId, videoTitles);
     }
+
+    public void refreshSearchTextPublic(Long playlistId) {
+        refreshSearchText(playlistId);
+    }
 }

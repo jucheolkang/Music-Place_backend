@@ -156,4 +156,16 @@ public interface PLRepository extends JpaRepository<PLEntity, Long> {
             nativeQuery = true
     )
     Page<PlaylistSearchProjection> searchByLatest(@Param("keyword") String keyword, Pageable pageable);
+
+    // 페이지네이션 없이 전체를 가져오는 메서드
+    @Query("""
+    select p from PLEntity p
+    where p.deleteState = false
+    and p.onOff = org.musicplace.playList.domain.OnOff.Public
+""")
+    List<PLEntity> findAllActivePublicPlaylists();
+
+    // 전체 재생목록 ID 조회
+    @Query("select p.playlistId from PLEntity p where p.deleteState = false")
+    List<Long> findAllActivePlaylistIds();
 }

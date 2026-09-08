@@ -52,6 +52,9 @@ spring:
       ack-mode: MANUAL_IMMEDIATE
       concurrency: 3
 
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://elasticsearch:9200}
+
 app:
   kafka:
     topic:
